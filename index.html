@@ -10,18 +10,16 @@
   <div id="app">
     <header>
       <div class="header-group">
+        <span id="timer">0:00</span>
         <span id="deck-count">Deck: 69</span>
         <span id="sets-found">Sets: 0</span>
       </div>
-      <h1>Set</h1>
+      <div id="message-toast" class="hidden"></div>
       <div class="header-group">
-        <span id="timer">0:00</span>
-        <button id="theme-toggle" aria-label="Toggle theme">🌙</button>
+        <button id="theme-toggle" aria-label="Toggle theme"></button>
         <button id="new-game-btn">New</button>
       </div>
     </header>
-
-    <div id="message-toast" class="hidden"></div>
 
     <main id="card-grid"></main>
 

@@ -147,7 +147,6 @@ function toggleTheme() {
   const isDark = body.classList.contains('dark');
   body.classList.toggle('dark', !isDark);
   body.classList.toggle('light', isDark);
-  document.getElementById('theme-toggle').textContent = isDark ? '🌙' : '☀️';
   localStorage.setItem('set-game-theme', isDark ? 'light' : 'dark');
 }
 
@@ -433,8 +432,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Restore theme
   const savedTheme = localStorage.getItem('set-game-theme') || 'light';
   document.body.className = savedTheme;
-  document.getElementById('theme-toggle').textContent =
-    savedTheme === 'dark' ? '☀️' : '🌙';
 
   // Button listeners
   document.getElementById('new-game-btn').addEventListener('click', initGame);
