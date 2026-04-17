@@ -4,7 +4,7 @@ A browser-based single-player implementation of the card game SET. It is snappy 
 
 ## How to play
 
-The goal is to find sets among the cards on the board. A set is three cards where, for each of the four attributes (number, shape, fill, color), the values across the three cards are either all the same or all different.
+The goal is to find sets among the cards on the board. A set is three cards where, for each of the four attributes (number, shape, fill, colour), the values across the three cards are either all the same or all different.
 
 Click three cards to select them. If they form a valid set, they're removed and replaced from the deck. If not, you get a brief "Not a set!" flash and can try again.
 
