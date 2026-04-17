@@ -72,6 +72,17 @@ function hasSet(cards) {
 
 // ─── SVG Card Rendering ──────────────────────────────────────────────────────
 
+function initStripePatterns() {
+  const patterns = Object.entries(COLOR_MAP).map(([name, color]) =>
+    `<pattern id="stripe-${name}" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="4" stroke="${color}" stroke-width="1.5"/>
+    </pattern>`
+  ).join('');
+  document.body.insertAdjacentHTML('afterbegin',
+    `<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><defs>${patterns}</defs></svg>`
+  );
+}
+
 function createCardElement(card) {
   const svgNS = 'http://www.w3.org/2000/svg';
   const div = document.createElement('div');
@@ -82,45 +93,33 @@ function createCardElement(card) {
   svg.setAttribute('class', 'card-svg');
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
-  const uid = Math.random().toString(36).slice(2, 9);
   const color = COLOR_MAP[card.color];
-
-  // Add stripe pattern defs if needed
-  if (card.fill === 'striped') {
-    const defs = document.createElementNS(svgNS, 'defs');
-    defs.innerHTML = `<pattern id="stripe-${uid}" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
-      <line x1="0" y1="0" x2="0" y2="4" stroke="${color}" stroke-width="1.5"/>
-    </pattern>`;
-    svg.appendChild(defs);
-  }
 
   const shapeH = SHAPE_DATA[card.shape].h * SHAPE_SCALE;
   const startY = (CARD_H - (card.number - 1) * SHAPE_SLOT_H) / 2;
   const yPositions = Array.from({ length: card.number }, (_, i) => startY + i * SHAPE_SLOT_H);
 
+  const pathTemplate = document.createElementNS(svgNS, 'path');
+  pathTemplate.setAttribute('d', SHAPE_DATA[card.shape].d);
+  if (card.fill === 'solid') {
+    pathTemplate.setAttribute('fill', color);
+    pathTemplate.setAttribute('stroke', color);
+    pathTemplate.setAttribute('stroke-width', `${(STROKE_THIN / SHAPE_SCALE).toFixed(2)}`);
+  } else if (card.fill === 'open') {
+    pathTemplate.setAttribute('fill', 'none');
+    pathTemplate.setAttribute('stroke', color);
+    pathTemplate.setAttribute('stroke-width', `${(STROKE_THICK / SHAPE_SCALE).toFixed(2)}`);
+  } else {
+    // striped
+    pathTemplate.setAttribute('fill', `url(#stripe-${card.color})`);  
+    pathTemplate.setAttribute('stroke', color);
+    pathTemplate.setAttribute('stroke-width', `${(STROKE_THICK / SHAPE_SCALE).toFixed(2)}`);
+  }
+
   for (const y of yPositions) {
-    const { d } = SHAPE_DATA[card.shape];
     const ty = y - shapeH / 2;
-
-    const pathEl = document.createElementNS(svgNS, 'path');
-    pathEl.setAttribute('d', d);
+    const pathEl = pathTemplate.cloneNode(false);
     pathEl.setAttribute('transform', `translate(${SHAPE_PAD_X}, ${ty.toFixed(2)}) scale(${SHAPE_SCALE})`);
-
-    if (card.fill === 'solid') {
-      pathEl.setAttribute('fill', color);
-      pathEl.setAttribute('stroke', color);
-      pathEl.setAttribute('stroke-width', `${(STROKE_THIN / SHAPE_SCALE).toFixed(2)}`);
-    } else if (card.fill === 'open') {
-      pathEl.setAttribute('fill', 'none');
-      pathEl.setAttribute('stroke', color);
-      pathEl.setAttribute('stroke-width', `${(STROKE_THICK / SHAPE_SCALE).toFixed(2)}`);
-    } else {
-      // striped
-      pathEl.setAttribute('fill', `url(#stripe-${uid})`);
-      pathEl.setAttribute('stroke', color);
-      pathEl.setAttribute('stroke-width', `${(STROKE_THICK / SHAPE_SCALE).toFixed(2)}`);
-    }
-
     svg.appendChild(pathEl);
   }
 
@@ -238,8 +237,11 @@ function dealCards(n) {
 }
 
 function handleCardClick(entry) {
-  if (!gameActive || animating) return;
+  if (!gameActive) return;
   const { el } = entry;
+
+  // Skip cards that are mid-animation
+  if (['valid', 'invalid', 'removing', 'dealing'].some(c => el.classList.contains(c))) return;
 
   // Deselect if already selected
   const idx = selected.indexOf(entry);
@@ -253,7 +255,7 @@ function handleCardClick(entry) {
   el.classList.add('selected');
   selected.push(entry);
 
-  if (selected.length === 3) {
+  if (selected.length === 3 && !animating) {
     animating = true;
     validateSelection();
   }
@@ -280,18 +282,33 @@ function validateSelection() {
       removeAndReplenish(toRemove);
     }, 180);
   } else {
-    // Invalid set
-    selected.forEach(e => {
+    // Invalid set — clear selected immediately so new clicks queue up
+    const invalidEntries = selected.slice();
+    selected = [];
+
+    invalidEntries.forEach(e => {
       e.el.classList.remove('selected');
       e.el.classList.add('invalid');
     });
     showToast('Not a set!');
 
     setTimeout(() => {
-      selected.forEach(e => e.el.classList.remove('invalid'));
-      selected = [];
+      invalidEntries.forEach(e => e.el.classList.remove('invalid'));
       animating = false;
+      checkPendingSelection();
     }, 180);
+  }
+}
+
+function checkPendingSelection() {
+  // Drop entries that were replaced/removed from the board
+  const stale = selected.filter(e => !board.includes(e));
+  stale.forEach(e => e.el.classList.remove('selected'));
+  selected = selected.filter(e => board.includes(e));
+
+  if (selected.length === 3) {
+    animating = true;
+    validateSelection();
   }
 }
 
@@ -329,6 +346,7 @@ function removeAndReplenish(entries) {
 
     updateDisplay();
     animating = false;
+    checkPendingSelection();
 
     // Wait for deal animation, then check state
     setTimeout(() => checkGameState(), 150);
@@ -336,7 +354,7 @@ function removeAndReplenish(entries) {
 }
 
 function checkGameState() {
-  if (!gameActive) return;
+  if (!gameActive || animating) return;
 
   // Board empty and deck empty → game over
   if (board.length === 0 && deck.length === 0) {
@@ -357,7 +375,12 @@ function checkGameState() {
     if (deck.length === 0) {
       endGame();
     } else {
-      reshuffleAndDeal();
+      const allCards = [...boardCards, ...deck];
+      if (!hasSet(allCards)) {
+        endGame();
+      } else {
+        reshuffleAndDeal();
+      }
     }
   }
 }
@@ -430,6 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
     savedTheme === 'dark' ? '☀️' : '🌙';
 
   // Button listeners
+  initStripePatterns();
   document.getElementById('new-game-btn').addEventListener('click', initGame);
   document.getElementById('play-again-btn').addEventListener('click', () => {
     document.getElementById('overlay').classList.add('hidden');
