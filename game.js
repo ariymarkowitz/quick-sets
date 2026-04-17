@@ -142,11 +142,9 @@ function showToast(msg) {
 // ─── Theme ───────────────────────────────────────────────────────────────────
 
 function toggleTheme() {
-  const body = document.body;
-  const isDark = body.classList.contains('dark');
-  body.classList.toggle('dark', !isDark);
-  body.classList.toggle('light', isDark);
-  localStorage.setItem('set-game-theme', isDark ? 'light' : 'dark');
+  const isDark = document.body.classList.toggle('dark');
+  document.body.classList.toggle('light', !isDark);
+  localStorage.setItem('set-game-theme', isDark ? 'dark' : 'light');
 }
 
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
@@ -257,10 +255,7 @@ function validateSelection() {
     const toRemove = selected.slice();
     selected = [];
 
-    setTimeout(() => {
-      //toRemove.forEach(e => e.el.classList.remove('valid'));
-      removeAndReplenish(toRemove);
-    }, 120);
+    setTimeout(() => removeAndReplenish(toRemove), 120);
   } else {
     // Invalid set — clear selected immediately so new clicks queue up
     const invalidEntries = selected.slice();
@@ -335,14 +330,8 @@ function removeAndReplenish(entries) {
 
 function checkGameState() {
   if (!gameActive || animating) return;
+  if (board.length === 0 && deck.length === 0) return endGame();
 
-  // Board empty and deck empty → game over
-  if (board.length === 0 && deck.length === 0) {
-    endGame();
-    return;
-  }
-
-  // Deal cards if board is very short but deck has more
   if (board.length < 3 && deck.length > 0) {
     dealCards(3 - board.length);
     setTimeout(() => checkGameState(), 150);
@@ -350,19 +339,9 @@ function checkGameState() {
   }
 
   const boardCards = board.map(e => e.card);
-
-  if (!hasSet(boardCards)) {
-    if (deck.length === 0) {
-      endGame();
-    } else {
-      const allCards = [...boardCards, ...deck];
-      if (!hasSet(allCards)) {
-        endGame();
-      } else {
-        reshuffleAndDeal();
-      }
-    }
-  }
+  if (hasSet(boardCards)) return;
+  if (deck.length === 0 || !hasSet([...boardCards, ...deck])) return endGame();
+  reshuffleAndDeal();
 }
 
 function reshuffleAndDeal() {
@@ -409,15 +388,12 @@ function endGame() {
   document.getElementById('modal-title').textContent = title;
   document.getElementById('final-time-display').textContent = formatTime(elapsed);
 
-  // Populate leaderboard, highlighting only the first occurrence of the current score
-  let highlightedCurrent = false;
+  const currentIdx = scores.indexOf(elapsed);
   const list = document.getElementById('leaderboard-list');
   list.innerHTML = scores
-    .map((s, i) => {
-      const isCurrent = !highlightedCurrent && s === elapsed;
-      if (isCurrent) highlightedCurrent = true;
-      return `<li${isCurrent ? ' class="current-score"' : ''}>${i + 1}. ${formatTime(s)}</li>`;
-    })
+    .map((s, i) =>
+      `<li${i === currentIdx ? ' class="current-score"' : ''}>${i + 1}. ${formatTime(s)}</li>`
+    )
     .join('');
 
   document.getElementById('overlay').classList.remove('hidden');
