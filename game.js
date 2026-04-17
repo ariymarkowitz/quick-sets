@@ -227,14 +227,12 @@ function dealCards(n) {
     const entry = { card, el };
     board.push(entry);
     el.addEventListener('click', () => handleCardClick(entry));
+    el.classList.add('dealing'); // start invisible before paint
     document.getElementById('card-grid').appendChild(el);
 
-    // Stagger deal-in animation
+    // Stagger deal-in transition (remove class after one frame + stagger)
     const delay = i * 10;
-    setTimeout(() => {
-      el.classList.add('dealing');
-      setTimeout(() => el.classList.remove('dealing'), 130);
-    }, delay);
+    setTimeout(() => el.classList.remove('dealing'), delay + 16);
   }
   updateDisplay();
 }
@@ -314,15 +312,13 @@ function removeAndReplenish(entries) {
         const el = createCardElement(card);
         const entry = { card, el };
         el.addEventListener('click', () => handleCardClick(entry));
+        el.classList.add('dealing'); // start invisible before paint
         grid.replaceChild(el, e.el);
         if (boardIdx !== -1) board[boardIdx] = entry;
         else board.push(entry);
 
         const delay = dealtCount * 10;
-        setTimeout(() => {
-          el.classList.add('dealing');
-          setTimeout(() => el.classList.remove('dealing'), 130);
-        }, delay);
+        setTimeout(() => el.classList.remove('dealing'), delay + 16);
         dealtCount++;
       } else {
         // Deck exhausted — just remove

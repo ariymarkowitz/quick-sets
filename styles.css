@@ -198,9 +198,9 @@ button:active {
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   box-shadow: 0 2px 8px var(--shadow);
-  transition-property: transform, box-shadow, border-color, background-color;
-  transition-duration: 0.15s, 0.15s, 0.2s, 0.3s;
-  transition-timing-function: ease, ease, ease, ease;
+  transition-property: opacity, transform, box-shadow, border-color, background-color;
+  transition-duration: 0.12s, 0.12s, 0.15s, 0.2s, 0.3s;
+  transition-timing-function: ease, ease, ease, ease, ease;
   position: relative;
   overflow: hidden;
   will-change: transform;
@@ -211,20 +211,17 @@ button:active {
   box-shadow: 0 5px 14px var(--shadow-hover);
 }
 
-.card:active {
-  transform: translateY(0);
-}
-
 .card.selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glow), 0 5px 14px var(--shadow-hover);
-  transform: translateY(-3px);
+  transform: translateY(-4px);
 }
 
 .card.valid {
   border-color: var(--valid) !important;
   box-shadow: 0 0 0 3px var(--valid-glow), 0 5px 16px var(--shadow-hover) !important;
   animation: pulse-valid 0.15s ease forwards;
+  transform: translateY(-4px);
 }
 
 .card.invalid {
@@ -234,7 +231,8 @@ button:active {
 }
 
 .card.dealing {
-  animation: deal-in 0.12s ease-out both;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.95);
 }
 
 .card.removing {
@@ -252,36 +250,25 @@ button:active {
 /* ─── Keyframe Animations ───────────────────────────────────────────────────── */
 
 @keyframes pulse-valid {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.04); }
-  100% { transform: scale(1); }
+  0%   { scale: 1; }
+  50%  { scale: 1.04; }
+  100% { scale: 1; }
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25%       { transform: translateX(-5px); }
-  75%       { transform: translateX(5px); }
-}
-
-@keyframes deal-in {
-  from {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  0%, 100% { translate: 0 0; }
+  25%      { translate: -5px 0; }
+  75%      { translate: 5px 0; }
 }
 
 @keyframes remove-out {
   from {
     opacity: 1;
-    transform: scale(1);
+    scale: 1;
   }
   to {
     opacity: 0;
-    transform: scale(0.9);
+    scale: 0.9;
   }
 }
 
