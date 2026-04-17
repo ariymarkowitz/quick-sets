@@ -28,7 +28,7 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="3.2263768"
-     inkscape:cx="51.605876"
+     inkscape:cx="51.295931"
      inkscape:cy="30.219657"
      inkscape:window-width="1440"
      inkscape:window-height="757"
@@ -97,8 +97,8 @@
      inkscape:label="diamond" />
   <path
      id="oval"
-     style="display:inline;fill:#000000"
-     d="M 30,0 A 30,30 0 0 0 0,30 30,30 0 0 0 30,60 H 90 A 30,30 0 0 0 120,30 30,30 0 0 0 90,0 Z"
+     style="display:inline;opacity:1;fill:#000000;fill-opacity:0.988235;stroke-width:115;stroke-linecap:round;stroke-miterlimit:100;stop-color:#000000"
+     d="M 27.5,0 A 27.5,27.5 0 0 0 0,27.5 27.5,27.5 0 0 0 27.5,55 h 65 A 27.5,27.5 0 0 0 120,27.5 27.5,27.5 0 0 0 92.5,0 Z"
      inkscape:label="oval" />
   <path
      style="display:inline;fill:#000000;stroke-width:3.28379"
