@@ -49,8 +49,8 @@ body.dark {
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg);
-  background-image: url("noise.svg");
-  background-blend-mode: hard-light;
+  /* background-image: url("noise.svg"); */
+  /* background-blend-mode: hard-light; */
   color: var(--text);
   height: 100vh;
   height: 100dvh;
