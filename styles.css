@@ -376,3 +376,26 @@ button:active {
 #play-again-btn:active {
   transform: scale(0.97);
 }
+
+/* ─── Shape Fill & Stroke ────────────────────────────────────────────────────
+   Applied to <use> elements; properties inherit into the <symbol> shadow tree.
+   stroke-width values are in the symbol's native coordinate space (0–120),
+   matching the STROKE_THIN / SHAPE_SCALE and STROKE_THICK / SHAPE_SCALE
+   values previously computed in JS.
+ ──────────────────────────────────────────────────────────────────────────── */
+
+.color-red    { stroke: #e63946; }
+.color-green  { stroke: #2d9a4e; }
+.color-purple { stroke: #7b5ea7; }
+
+.shading-solid   { stroke-width: 2.14; }
+.shading-open    { fill: none;  stroke-width: 4.29; }
+.shading-striped {              stroke-width: 4.29; }
+
+.shading-solid.color-red      { fill: #e63946; }
+.shading-solid.color-green    { fill: #2d9a4e; }
+.shading-solid.color-purple   { fill: #7b5ea7; }
+
+.shading-striped.color-red    { fill: url(#stripe-red); }
+.shading-striped.color-green  { fill: url(#stripe-green); }
+.shading-striped.color-purple { fill: url(#stripe-purple); }

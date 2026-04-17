@@ -72,58 +72,40 @@ function hasSet(cards) {
 
 // ─── SVG Card Rendering ──────────────────────────────────────────────────────
 
-function initStripePatterns() {
+function initSVGDefs() {
+  const symbols = Object.entries(SHAPE_DATA).map(([name, data]) =>
+    `<symbol id="shape-${name}" viewBox="0 0 ${SHAPE_NATIVE_W} ${data.h}" overflow="visible">
+      <path d="${data.d}"/>
+    </symbol>`
+  ).join('');
+
   const patterns = Object.entries(COLOR_MAP).map(([name, color]) =>
     `<pattern id="stripe-${name}" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
       <line x1="0" y1="0" x2="0" y2="4" stroke="${color}" stroke-width="1.5"/>
     </pattern>`
   ).join('');
+
   document.body.insertAdjacentHTML('afterbegin',
-    `<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><defs>${patterns}</defs></svg>`
+    `<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><defs>${symbols}${patterns}</defs></svg>`
   );
 }
 
 function createCardElement(card) {
-  const svgNS = 'http://www.w3.org/2000/svg';
-  const div = document.createElement('div');
-  div.className = 'card';
-
-  const svg = document.createElementNS(svgNS, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${CARD_W} ${CARD_H}`);
-  svg.setAttribute('class', 'card-svg');
-  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-
-  const color = COLOR_MAP[card.color];
-
   const shapeH = SHAPE_DATA[card.shape].h * SHAPE_SCALE;
   const startY = (CARD_H - (card.number - 1) * SHAPE_SLOT_H) / 2;
-  const yPositions = Array.from({ length: card.number }, (_, i) => startY + i * SHAPE_SLOT_H);
+  const uses = Array.from({ length: card.number }, (_, i) => {
+    const ty = startY + i * SHAPE_SLOT_H - shapeH / 2;
+    return `<use href="#shape-${card.shape}"
+      x="${SHAPE_PAD_X}" y="${ty.toFixed(2)}"
+      width="${SHAPE_W}" height="${shapeH.toFixed(2)}"
+      class="shading-${card.fill}
+      color-${card.color}"
+    />`;
+  }).join('');
 
-  const pathTemplate = document.createElementNS(svgNS, 'path');
-  pathTemplate.setAttribute('d', SHAPE_DATA[card.shape].d);
-  if (card.fill === 'solid') {
-    pathTemplate.setAttribute('fill', color);
-    pathTemplate.setAttribute('stroke', color);
-    pathTemplate.setAttribute('stroke-width', `${(STROKE_THIN / SHAPE_SCALE).toFixed(2)}`);
-  } else if (card.fill === 'open') {
-    pathTemplate.setAttribute('fill', 'none');
-    pathTemplate.setAttribute('stroke', color);
-    pathTemplate.setAttribute('stroke-width', `${(STROKE_THICK / SHAPE_SCALE).toFixed(2)}`);
-  } else {
-    // striped
-    pathTemplate.setAttribute('fill', `url(#stripe-${card.color})`);  
-    pathTemplate.setAttribute('stroke', color);
-    pathTemplate.setAttribute('stroke-width', `${(STROKE_THICK / SHAPE_SCALE).toFixed(2)}`);
-  }
-
-  for (const y of yPositions) {
-    const ty = y - shapeH / 2;
-    const pathEl = pathTemplate.cloneNode(false);
-    pathEl.setAttribute('transform', `translate(${SHAPE_PAD_X}, ${ty.toFixed(2)}) scale(${SHAPE_SCALE})`);
-    svg.appendChild(pathEl);
-  }
-
-  div.appendChild(svg);
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.innerHTML = `<svg viewBox="0 0 ${CARD_W} ${CARD_H}" class="card-svg" preserveAspectRatio="xMidYMid meet">${uses}</svg>`;
   return div;
 }
 
@@ -446,6 +428,8 @@ function endGame() {
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+  initSVGDefs();
+  
   // Restore theme
   const savedTheme = localStorage.getItem('set-game-theme') || 'light';
   document.body.className = savedTheme;
@@ -453,7 +437,6 @@ document.addEventListener('DOMContentLoaded', () => {
     savedTheme === 'dark' ? '☀️' : '🌙';
 
   // Button listeners
-  initStripePatterns();
   document.getElementById('new-game-btn').addEventListener('click', initGame);
   document.getElementById('play-again-btn').addEventListener('click', () => {
     document.getElementById('overlay').classList.add('hidden');
