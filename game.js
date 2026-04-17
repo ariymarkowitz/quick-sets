@@ -11,6 +11,7 @@ const SHAPE_SCALE    = SHAPE_W / SHAPE_NATIVE_W;
 const STROKE_THIN    = 1.5;                        // stroke width for solid fill (SVG units)
 const STROKE_THICK   = 3;                          // stroke width for open/striped (SVG units)
 const GAP_SCALE      = 0.2;                       // additional gap between shapes as a fraction of shape height
+const DEAL_SETTLE_MS = 150;                        // wait for deal-in animation before checking game state
 
 // Path data extracted from shapes/*.svg files (all have native width=SHAPE_NATIVE_W)
 const SHAPE_DATA = {
@@ -68,6 +69,23 @@ function hasSet(cards) {
       for (let k = j + 1; k < cards.length; k++)
         if (isValidSet(cards[i], cards[j], cards[k])) return true;
   return false;
+}
+
+// ─── Card Entry Helpers ─────────────────────────────────────────────────────
+
+function makeEntry(dealIndex = 0) {
+  const card = deck.pop();
+  const el = createCardElement(card);
+  const entry = { card, el };
+  el.addEventListener('click', () => handleCardClick(entry));
+  el.classList.add('dealing');
+  setTimeout(() => el.classList.remove('dealing'), dealIndex * 10 + 16);
+  return entry;
+}
+
+function finishAnimating() {
+  animating = false;
+  checkPendingSelection();
 }
 
 // ─── SVG Card Rendering ──────────────────────────────────────────────────────
@@ -193,23 +211,16 @@ function initGame() {
   dealCards(12);
 
   // Wait for deal animations before checking for sets
-  setTimeout(() => checkGameState(), 150);
+  setTimeout(() => checkGameState(), DEAL_SETTLE_MS);
 }
 
 function dealCards(n) {
   const count = Math.min(n, deck.length);
+  const grid = document.getElementById('card-grid');
   for (let i = 0; i < count; i++) {
-    const card = deck.pop();
-    const el = createCardElement(card);
-    const entry = { card, el };
+    const entry = makeEntry(i);
     board.push(entry);
-    el.addEventListener('click', () => handleCardClick(entry));
-    el.classList.add('dealing'); // start invisible before paint
-    document.getElementById('card-grid').appendChild(el);
-
-    // Stagger deal-in transition (remove class after one frame + stagger)
-    const delay = i * 10;
-    setTimeout(() => el.classList.remove('dealing'), delay + 16);
+    grid.appendChild(entry.el);
   }
   updateDisplay();
 }
@@ -269,8 +280,7 @@ function validateSelection() {
 
     setTimeout(() => {
       invalidEntries.forEach(e => e.el.classList.remove('invalid'));
-      animating = false;
-      checkPendingSelection();
+      finishAnimating();
     }, 180);
   }
 }
@@ -300,18 +310,10 @@ function removeAndReplenish(entries) {
 
       if (deck.length > 0) {
         // Replace card in-place (same DOM position, same board index)
-        const card = deck.pop();
-        const el = createCardElement(card);
-        const entry = { card, el };
-        el.addEventListener('click', () => handleCardClick(entry));
-        el.classList.add('dealing'); // start invisible before paint
-        grid.replaceChild(el, e.el);
+        const entry = makeEntry(dealtCount++);
+        grid.replaceChild(entry.el, e.el);
         if (boardIdx !== -1) board[boardIdx] = entry;
         else board.push(entry);
-
-        const delay = dealtCount * 10;
-        setTimeout(() => el.classList.remove('dealing'), delay + 16);
-        dealtCount++;
       } else {
         // Deck exhausted — just remove
         e.el.remove();
@@ -320,11 +322,10 @@ function removeAndReplenish(entries) {
     });
 
     updateDisplay();
-    animating = false;
-    checkPendingSelection();
+    finishAnimating();
 
     // Wait for deal animation, then check state
-    setTimeout(() => checkGameState(), 150);
+    setTimeout(() => checkGameState(), DEAL_SETTLE_MS);
   }, 130);
 }
 
@@ -334,7 +335,7 @@ function checkGameState() {
 
   if (board.length < 3 && deck.length > 0) {
     dealCards(3 - board.length);
-    setTimeout(() => checkGameState(), 150);
+    setTimeout(() => checkGameState(), DEAL_SETTLE_MS);
     return;
   }
 
@@ -369,9 +370,7 @@ function reshuffleAndDeal() {
     dealCards(Math.min(12, deck.length));
     animating = false;
 
-    setTimeout(() => {
-      checkGameState();
-    }, 150);
+    setTimeout(() => checkGameState(), DEAL_SETTLE_MS);
   }, totalDelay);
 }
 
