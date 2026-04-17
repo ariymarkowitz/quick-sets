@@ -112,8 +112,7 @@ function createCardElement(card) {
 // ─── Display Helpers ─────────────────────────────────────────────────────────
 
 function updateDisplay() {
-  document.getElementById('deck-count').textContent = `Deck: ${deck.length}`;
-  document.getElementById('sets-found').textContent = `Sets: ${setsFound}`;
+  document.getElementById('deck-count-num').textContent = deck.length;
 }
 
 function updateTimer() {
