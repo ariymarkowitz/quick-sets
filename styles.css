@@ -224,21 +224,21 @@ button:active {
 .card.valid {
   border-color: var(--valid) !important;
   box-shadow: 0 0 0 3px var(--valid-glow), 0 5px 16px var(--shadow-hover) !important;
-  animation: pulse-valid 0.55s ease forwards;
+  animation: pulse-valid 0.15s ease forwards;
 }
 
 .card.invalid {
   border-color: var(--invalid) !important;
   box-shadow: 0 0 0 3px var(--invalid-glow) !important;
-  animation: shake 0.5s ease forwards;
+  animation: shake 0.15s ease forwards;
 }
 
 .card.dealing {
-  animation: deal-in 0.35s ease-out both;
+  animation: deal-in 0.12s ease-out both;
 }
 
 .card.removing {
-  animation: remove-out 0.38s ease-in forwards;
+  animation: remove-out 0.12s ease-in forwards;
   pointer-events: none;
 }
 
@@ -253,22 +253,20 @@ button:active {
 
 @keyframes pulse-valid {
   0%   { transform: scale(1); }
-  35%  { transform: scale(1.07); }
+  50%  { transform: scale(1.04); }
   100% { transform: scale(1); }
 }
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  18%       { transform: translateX(-7px); }
-  36%       { transform: translateX(7px); }
-  54%       { transform: translateX(-5px); }
-  72%       { transform: translateX(5px); }
+  25%       { transform: translateX(-5px); }
+  75%       { transform: translateX(5px); }
 }
 
 @keyframes deal-in {
   from {
     opacity: 0;
-    transform: translateY(-18px) scale(0.88);
+    transform: translateY(-8px) scale(0.95);
   }
   to {
     opacity: 1;
@@ -283,7 +281,7 @@ button:active {
   }
   to {
     opacity: 0;
-    transform: scale(0.82);
+    transform: scale(0.9);
   }
 }
 

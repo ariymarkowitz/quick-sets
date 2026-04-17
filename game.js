@@ -216,7 +216,7 @@ function initGame() {
   dealCards(12);
 
   // Wait for deal animations before checking for sets
-  setTimeout(() => checkGameState(), 450);
+  setTimeout(() => checkGameState(), 150);
 }
 
 function dealCards(n) {
@@ -230,10 +230,10 @@ function dealCards(n) {
     document.getElementById('card-grid').appendChild(el);
 
     // Stagger deal-in animation
-    const delay = i * 50;
+    const delay = i * 10;
     setTimeout(() => {
       el.classList.add('dealing');
-      setTimeout(() => el.classList.remove('dealing'), 400);
+      setTimeout(() => el.classList.remove('dealing'), 130);
     }, delay);
   }
   updateDisplay();
@@ -280,7 +280,7 @@ function validateSelection() {
     setTimeout(() => {
       toRemove.forEach(e => e.el.classList.remove('valid'));
       removeAndReplenish(toRemove);
-    }, 620);
+    }, 180);
   } else {
     // Invalid set
     selected.forEach(e => {
@@ -293,7 +293,7 @@ function validateSelection() {
       selected.forEach(e => e.el.classList.remove('invalid'));
       selected = [];
       animating = false;
-    }, 620);
+    }, 180);
   }
 }
 
@@ -302,24 +302,41 @@ function removeAndReplenish(entries) {
   entries.forEach(e => e.el.classList.add('removing'));
 
   setTimeout(() => {
-    // Remove from DOM and board array
-    entries.forEach(e => {
-      e.el.remove();
-      const idx = board.indexOf(e);
-      if (idx !== -1) board.splice(idx, 1);
-    });
+    const grid = document.getElementById('card-grid');
+    let dealtCount = 0;
 
-    // Replenish from deck
-    if (deck.length > 0) {
-      dealCards(entries.length);
-    }
+    entries.forEach((e, i) => {
+      const boardIdx = board.indexOf(e);
+
+      if (deck.length > 0) {
+        // Replace card in-place (same DOM position, same board index)
+        const card = deck.pop();
+        const el = createCardElement(card);
+        const entry = { card, el };
+        el.addEventListener('click', () => handleCardClick(entry));
+        grid.replaceChild(el, e.el);
+        if (boardIdx !== -1) board[boardIdx] = entry;
+        else board.push(entry);
+
+        const delay = dealtCount * 10;
+        setTimeout(() => {
+          el.classList.add('dealing');
+          setTimeout(() => el.classList.remove('dealing'), 130);
+        }, delay);
+        dealtCount++;
+      } else {
+        // Deck exhausted — just remove
+        e.el.remove();
+        if (boardIdx !== -1) board.splice(boardIdx, 1);
+      }
+    });
 
     updateDisplay();
     animating = false;
 
     // Wait for deal animation, then check state
-    setTimeout(() => checkGameState(), 450);
-  }, 400);
+    setTimeout(() => checkGameState(), 150);
+  }, 130);
 }
 
 function checkGameState() {
@@ -334,7 +351,7 @@ function checkGameState() {
   // Deal cards if board is very short but deck has more
   if (board.length < 3 && deck.length > 0) {
     dealCards(3 - board.length);
-    setTimeout(() => checkGameState(), 450);
+    setTimeout(() => checkGameState(), 150);
     return;
   }
 
@@ -355,10 +372,10 @@ function reshuffleAndDeal() {
 
   // Animate all cards out with a slight stagger
   board.forEach((e, i) => {
-    setTimeout(() => e.el.classList.add('removing'), i * 30);
+    setTimeout(() => e.el.classList.add('removing'), i * 10);
   });
 
-  const totalDelay = board.length * 30 + 420;
+  const totalDelay = board.length * 10 + 130;
 
   setTimeout(() => {
     // Collect all cards back
@@ -376,7 +393,7 @@ function reshuffleAndDeal() {
 
     setTimeout(() => {
       checkGameState();
-    }, 500);
+    }, 150);
   }, totalDelay);
 }
 
