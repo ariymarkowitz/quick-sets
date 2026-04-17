@@ -40,9 +40,17 @@ body.dark {
   padding: 0;
 }
 
+.hidden-svg {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: url("noise.svg");
+  background-blend-mode: hard-light;
   color: var(--text);
   height: 100vh;
   height: 100dvh;
@@ -53,6 +61,8 @@ body {
 /* ─── App & Layout ──────────────────────────────────────────────────────────── */
 
 #app {
+  position: relative;
+  z-index: 1;
   max-width: 700px;
   margin: 0 auto;
   height: 100vh;
@@ -194,7 +204,7 @@ button:active {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 6px;
+  padding: 7%;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   box-shadow: 0 2px 8px var(--shadow);
