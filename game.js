@@ -260,9 +260,9 @@ function validateSelection() {
     selected = [];
 
     setTimeout(() => {
-      toRemove.forEach(e => e.el.classList.remove('valid'));
+      //toRemove.forEach(e => e.el.classList.remove('valid'));
       removeAndReplenish(toRemove);
-    }, 180);
+    }, 120);
   } else {
     // Invalid set — clear selected immediately so new clicks queue up
     const invalidEntries = selected.slice();
