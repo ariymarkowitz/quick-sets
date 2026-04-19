@@ -16,6 +16,12 @@ Quick Sets — a browser-based single-player implementation of the card game SET
 
 There is no test suite or linter configured.
 
+## Guidelines
+
+Prefer using reusable components to duplicated code. Think about modularity, simplicity, elegance, and readability.
+
+Use Svelte 5 runes instead of stores to manage reactive state.
+
 ## Architecture
 
 The app is a single-page Svelte 5 component tree mounted from [src/main.ts](src/main.ts) into [index.html](index.html). The root [src/App.svelte](src/App.svelte) composes `Header`, `CardGrid`, `GameOverModal`, `Toast`, and `SvgDefs`.

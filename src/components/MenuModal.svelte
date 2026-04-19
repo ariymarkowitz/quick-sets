@@ -16,13 +16,15 @@
     theme = toggleTheme();
   }
 
-  // TODO [Claude]: Don't start or unpause the game until the modal leaves
   function onClose() {
+    const a = game.pendingAction;
+    game.pendingAction = null;
+    a?.();
     view = 'main';
   }
 </script>
 
-<Modal open={game.menuOpen && mounted} onclose={onClose}>
+<Modal open={game.modalVisible && game.menuOpen && mounted} onclose={onClose}>
   {#if view === 'main'}
     <h2 id="modal-title">Quick Sets</h2>
 

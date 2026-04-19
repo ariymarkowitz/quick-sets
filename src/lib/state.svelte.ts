@@ -1,7 +1,7 @@
 import { generateDeck, shuffle, isValidSet, hasSet, findSet, type Card } from './game.js';
 import { saveScore as persistScore, getScores } from './storage.js';
 import {
-  INITIAL_BOARD, MIN_BOARD, DEAL_SETTLE_MS, DEAL_STAGGER_MS,
+  INITIAL_BOARD, MIN_BOARD, DEAL_SETTLE_MS, DEAL_STAGGER_MS, DEAL_DURATION_MS,
   VALID_FLASH_MS, INVALID_FLASH_MS, REMOVE_ANIM_MS, TOAST_MS,
 } from './constants.js';
 
@@ -18,7 +18,16 @@ export type BoardEntry = {
   id: number;
   card: Card | null;
   status: EntryStatus;
+  dealDelay: number;
+  removeDelay: number;
 };
+
+// Reactive animation settings — change these to scale all transition durations.
+export const animSettings = $state({
+  dealDuration: DEAL_DURATION_MS,
+  removeDuration: REMOVE_ANIM_MS,
+  stagger: DEAL_STAGGER_MS,
+});
 
 export type GameOverInfo = {
   title: string;
@@ -41,6 +50,9 @@ export type GameState = {
   gameOver: GameOverInfo | null;
   menuOpen: boolean;
   mode: GameMode;
+  cardsVisible: boolean;
+  modalVisible: boolean;
+  pendingAction: (() => void) | null;
 };
 
 export const game: GameState = $state({
@@ -55,6 +67,9 @@ export const game: GameState = $state({
   gameOver: null,
   menuOpen: true,
   mode: 'casual',
+  cardsVisible: false,
+  modalVisible: true,
+  pendingAction: null,
 });
 
 function ensureBoardHasSet(cards: Card[], boardSize: number): void {
@@ -90,12 +105,12 @@ function dealCards(n: number): BoardEntry[] {
   const newEntries: BoardEntry[] = [];
   for (let i = 0; i < count; i++) {
     const card = game.deck.pop()!;
-    newEntries.push({ id: makeId(), card, status: 'dealing' });
+    newEntries.push({ id: makeId(), card, status: 'dealing', dealDelay: i * animSettings.stagger, removeDelay: 0 });
   }
   game.board.push(...newEntries);
 
-  newEntries.forEach((entry, i) => {
-    setTimeout(() => clearDealingStatus(entry.id), i * DEAL_STAGGER_MS + 16);
+  newEntries.forEach((entry) => {
+    setTimeout(() => clearDealingStatus(entry.id), entry.dealDelay + animSettings.dealDuration);
   });
 
   return newEntries;
@@ -160,59 +175,62 @@ function validateSelection(): void {
 }
 
 function removeAndReplenish(idsToRemove: number[]): void {
-  for (const e of game.board) if (idsToRemove.includes(e.id)) e.status = 'removing';
+  // Mark cards as removing → the {#if} in CardGrid toggles to false → out: transition fires.
+  // The grid slot div persists throughout, so no layout shift occurs.
+  for (const e of game.board) {
+    if (idsToRemove.includes(e.id)) e.status = 'removing';
+  }
 
   setTimeout(() => {
-    const newEntryIds: number[] = [];
-    const next: BoardEntry[] = [];
-    for (const entry of game.board) {
-      if (idsToRemove.includes(entry.id)) {
-        if (game.deck.length > 0) {
-          const card = game.deck.pop()!;
-          const newEntry: BoardEntry = { id: makeId(), card, status: 'dealing' };
-          newEntryIds.push(newEntry.id);
-          next.push(newEntry);
-        } else {
-          next.push({ id: makeId(), card: null, status: 'placeholder' });
-        }
+    // Swap card data in-place on the same entry (same slot ID = same grid cell).
+    // {#if} flips back to true → in: transition fires for the new card.
+    let dealIdx = 0;
+    for (const e of game.board) {
+      if (e.status !== 'removing') continue;
+      if (game.deck.length > 0) {
+        e.card = game.deck.pop()!;
+        e.dealDelay = dealIdx * animSettings.stagger;
+        e.removeDelay = 0;
+        e.status = 'dealing';
+        setTimeout(() => clearDealingStatus(e.id), e.dealDelay + animSettings.dealDuration);
+        dealIdx++;
       } else {
-        next.push(entry);
+        e.card = null;
+        e.status = 'placeholder';
       }
     }
-    game.board = next;
-
-    newEntryIds.forEach((id, i) => {
-      setTimeout(() => clearDealingStatus(id), i * DEAL_STAGGER_MS + 16);
-    });
-
     finishAnimating();
     setTimeout(checkGameState, DEAL_SETTLE_MS);
-  }, REMOVE_ANIM_MS);
+  }, animSettings.removeDuration);
 }
 
 function reshuffleAndDeal(): void {
   showToast('No sets here — reshuffling…');
   game.animating = true;
 
+  const combined: Card[] = [
+    ...activeEntries().map(e => e.card).filter((c): c is Card => c !== null),
+    ...game.deck,
+  ];
+  ensureBoardHasSet(combined, INITIAL_BOARD);
+  game.deck = combined;
+
+  // Stagger the exits: set removeDelay then mark all as removing in the same tick
+  // so Svelte fires each out: transition with the appropriate delay.
+  const boardCount = game.board.length;
   game.board.forEach((entry, i) => {
-    setTimeout(() => setEntryStatus(entry.id, 'removing'), i * DEAL_STAGGER_MS);
+    entry.removeDelay = i * animSettings.stagger;
+    entry.status = 'removing';
   });
+  selectedIds = [];
 
-  const totalDelay = game.board.length * DEAL_STAGGER_MS + REMOVE_ANIM_MS;
-
+  const totalOutDelay = boardCount * animSettings.stagger + animSettings.removeDuration;
   setTimeout(() => {
-    const combined: Card[] = [
-      ...activeEntries().map(e => e.card).filter((c): c is Card => c !== null),
-      ...game.deck,
-    ];
-    ensureBoardHasSet(combined, INITIAL_BOARD);
-    game.deck = combined;
     game.board = [];
-    selectedIds = [];
     dealCards(Math.min(INITIAL_BOARD, game.deck.length));
     game.animating = false;
-    setTimeout(checkGameState, DEAL_SETTLE_MS);
-  }, totalDelay);
+    setTimeout(checkGameState, animSettings.dealDuration);
+  }, totalOutDelay);
 }
 
 function activeEntries(): BoardEntry[] {
@@ -246,6 +264,27 @@ function checkGameState(): void {
   reshuffleAndDeal();
 }
 
+function hideCardsThenShowModal(prepareModal: () => void): void {
+  const active = activeEntries();
+  const activeCount = active.length;
+  active.forEach((entry, i) => { entry.removeDelay = i * animSettings.stagger; });
+  game.cardsVisible = false;
+  const outroTotal = activeCount * animSettings.stagger + animSettings.removeDuration;
+  setTimeout(() => {
+    prepareModal();
+    game.modalVisible = true;
+  }, outroTotal);
+}
+
+function hideModalThenRun(action: () => void): void {
+  game.pendingAction = action;
+  game.modalVisible = false;
+}
+
+function staggerBoardDealIn(): void {
+  game.board.forEach((entry, i) => { entry.dealDelay = i * animSettings.stagger; });
+}
+
 function endGame(): void {
   game.gameActive = false;
   if (timerId) {
@@ -260,10 +299,12 @@ function endGame(): void {
   const title = activeEntries().length === 0 && game.deck.length === 0 ? 'You finished!' : 'No more sets!';
   const currentIdx = newScores.indexOf(elapsedValue);
 
-  game.gameOver = { title, time: elapsedValue, scores: newScores, currentIdx };
+  hideCardsThenShowModal(() => {
+    game.gameOver = { title, time: elapsedValue, scores: newScores, currentIdx };
+  });
 }
 
-export function newGame(): void {
+function performNewGameSetup(): void {
   if (timerId) {
     clearInterval(timerId);
     timerId = null;
@@ -295,9 +336,16 @@ export function newGame(): void {
   setTimeout(() => checkGameState(), DEAL_SETTLE_MS);
 }
 
+export function newGame(): void {
+  hideModalThenRun(() => {
+    performNewGameSetup();
+    staggerBoardDealIn();
+    game.cardsVisible = true;
+  });
+}
+
 export function openMenu(): void {
   if (game.menuOpen) return;
-  game.menuOpen = true;
   if (game.gameActive && pausedAt === null) {
     pausedAt = Date.now();
     if (timerId) {
@@ -305,19 +353,24 @@ export function openMenu(): void {
       timerId = null;
     }
   }
+  hideCardsThenShowModal(() => { game.menuOpen = true; });
 }
 
 export function closeMenu(): void {
   if (!game.menuOpen) return;
   if (!game.gameActive) return;
-  game.menuOpen = false;
-  if (pausedAt !== null) {
-    gameStartTime += Date.now() - pausedAt;
-    pausedAt = null;
-    timerId = setInterval(() => {
-      game.elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
-    }, 1000);
-  }
+  hideModalThenRun(() => {
+    game.menuOpen = false;
+    if (pausedAt !== null) {
+      gameStartTime += Date.now() - pausedAt;
+      pausedAt = null;
+      timerId = setInterval(() => {
+        game.elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+      }, 1000);
+    }
+    staggerBoardDealIn();
+    game.cardsVisible = true;
+  });
 }
 
 export function setMode(mode: GameMode): void {

@@ -26,8 +26,6 @@
   class:selected={entry.status === 'selected'}
   class:valid={entry.status === 'valid'}
   class:invalid={entry.status === 'invalid'}
-  class:dealing={entry.status === 'dealing'}
-  class:removing={entry.status === 'removing'}
   role="button"
   tabindex="0"
   {onclick}

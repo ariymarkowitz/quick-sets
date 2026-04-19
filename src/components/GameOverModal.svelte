@@ -3,16 +3,14 @@
   import { formatTime } from '../lib/game';
   import Modal from './Modal.svelte';
 
-  function playAgain() {
-    game.gameOver = null;
-  }
-
-  function afterClose() {
-    newGame();
+  function onClose() {
+    const a = game.pendingAction;
+    game.pendingAction = null;
+    a?.();
   }
 </script>
 
-<Modal open={!!game.gameOver} onclose={afterClose}>
+<Modal open={game.modalVisible && !!game.gameOver} onclose={onClose}>
   <h2 id="modal-title">{game.gameOver?.title}</h2>
   <p id="final-time-display">{formatTime(game.gameOver?.time ?? 0)}</p>
   <h3>Top Times</h3>
@@ -23,5 +21,5 @@
       </li>
     {/each}
   </ol>
-  <button id="play-again-btn" onclick={playAgain}>Play Again</button>
+  <button id="play-again-btn" onclick={newGame}>Play Again</button>
 </Modal>
