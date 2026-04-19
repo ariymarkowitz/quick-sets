@@ -1,3 +1,7 @@
+// TODO [Claude]: Create dev settings (only in dev mode) for auto matching sets or skipping to the end.
+
+// TODO [Claude]: Implement the game as a Progressive Web App
+
 const NUMBERS = [1, 2, 3];
 const SHAPES = ['oval', 'diamond', 'squiggle'];
 const FILLS = ['solid', 'striped', 'open'];
@@ -36,6 +40,8 @@ export function isValidSet(a, b, c) {
   return true;
 }
 
+// TODO [Claude]: Make this more efficient (only check pairs of cards, then check that the necessary third card is in the deck).
+// I suppose this requires passing in a set instead of an array. Only make the change if you deem it's practical.
 export function hasSet(cards) {
   const n = cards.length;
   for (let i = 0; i < n - 2; i++) {
