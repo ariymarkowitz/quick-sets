@@ -330,8 +330,6 @@ body.dark #theme-toggle::before {
   align-items: center;
   justify-content: center;
   z-index: 100;
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
   padding: 20px;
 }
 
