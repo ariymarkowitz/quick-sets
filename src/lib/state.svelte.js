@@ -124,6 +124,8 @@ function removeAndReplenish(idsToRemove) {
           const newEntry = { id: makeId(), card, status: 'dealing' };
           newEntryIds.push(newEntry.id);
           next.push(newEntry);
+        } else {
+          next.push({ id: makeId(), card: null, status: 'placeholder' });
         }
       } else {
         next.push(entry);
@@ -151,7 +153,7 @@ function reshuffleAndDeal() {
   const totalDelay = game.board.length * DEAL_STAGGER_MS + REMOVE_ANIM_MS;
 
   setTimeout(() => {
-    const combined = [...game.board.map(e => e.card), ...game.deck];
+    const combined = [...activeEntries().map(e => e.card), ...game.deck];
     shuffle(combined);
     game.deck = combined;
     game.board = [];
@@ -162,21 +164,27 @@ function reshuffleAndDeal() {
   }, totalDelay);
 }
 
+function activeEntries() {
+  return game.board.filter(e => e.status !== 'placeholder');
+}
+
 function checkGameState() {
   if (!game.gameActive || game.animating) return;
 
-  if (game.board.length === 0 && game.deck.length === 0) {
+  const active = activeEntries();
+
+  if (active.length === 0 && game.deck.length === 0) {
     endGame();
     return;
   }
 
-  if (game.board.length < MIN_BOARD && game.deck.length > 0) {
-    dealCards(MIN_BOARD - game.board.length);
+  if (active.length < MIN_BOARD && game.deck.length > 0) {
+    dealCards(MIN_BOARD - active.length);
     setTimeout(checkGameState, DEAL_SETTLE_MS);
     return;
   }
 
-  const boardCards = game.board.map(e => e.card);
+  const boardCards = active.map(e => e.card);
   if (hasSet(boardCards)) return;
 
   if (game.deck.length === 0 || !hasSet([...boardCards, ...game.deck])) {
@@ -198,7 +206,7 @@ function endGame() {
   const newScores = persistScore(elapsedValue);
   game.scores = newScores;
 
-  const title = game.board.length === 0 && game.deck.length === 0 ? 'You finished!' : 'No more sets!';
+  const title = activeEntries().length === 0 && game.deck.length === 0 ? 'You finished!' : 'No more sets!';
   const currentIdx = newScores.indexOf(elapsedValue);
 
   game.gameOver = { title, time: elapsedValue, scores: newScores, currentIdx };
@@ -235,7 +243,7 @@ export function newGame() {
 
 export function devAutoMatch() {
   if (!game.gameActive || game.animating) return;
-  const entries = game.board.filter(e => e.status !== 'removing' && e.status !== 'dealing');
+  const entries = game.board.filter(e => e.status !== 'removing' && e.status !== 'dealing' && e.status !== 'placeholder');
   const indices = findSet(entries.map(e => e.card));
   if (!indices) return;
   const ids = indices.map(i => entries[i].id);

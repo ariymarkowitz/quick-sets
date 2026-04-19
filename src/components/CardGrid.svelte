@@ -5,6 +5,17 @@
 
 <main id="card-grid">
   {#each game.board as entry (entry.id)}
-    <Card {entry} onclick={() => handleCardClick(entry.id)} />
+    {#if entry.status === 'placeholder'}
+      <div class="card-placeholder" aria-hidden="true"></div>
+    {:else}
+      <Card {entry} onclick={() => handleCardClick(entry.id)} />
+    {/if}
   {/each}
 </main>
+
+<style>
+  .card-placeholder {
+    visibility: hidden;
+    pointer-events: none;
+  }
+</style>
