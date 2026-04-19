@@ -40,15 +40,35 @@ export function isValidSet(a, b, c) {
   return true;
 }
 
-// TODO [Claude]: Make this more efficient (only check pairs of cards, then check that the necessary third card is in the deck).
-// I suppose this requires passing in a set instead of an array. Only make the change if you deem it's practical.
+function cardKey(card) {
+  return `${card.number}|${card.shape}|${card.fill}|${card.color}`;
+}
+
+function thirdCardKey(a, b) {
+  const attrs = ['number', 'shape', 'fill', 'color'];
+  const parts = [];
+  for (const attr of attrs) {
+    if (a[attr] === b[attr]) {
+      parts.push(a[attr]);
+    } else {
+      const options = attr === 'number' ? NUMBERS
+        : attr === 'shape' ? SHAPES
+        : attr === 'fill' ? FILLS
+        : COLORS;
+      parts.push(options.find((v) => v !== a[attr] && v !== b[attr]));
+    }
+  }
+  return parts.join('|');
+}
+
 export function hasSet(cards) {
   const n = cards.length;
-  for (let i = 0; i < n - 2; i++) {
-    for (let j = i + 1; j < n - 1; j++) {
-      for (let k = j + 1; k < n; k++) {
-        if (isValidSet(cards[i], cards[j], cards[k])) return true;
-      }
+  if (n < 3) return false;
+  const keys = new Set();
+  for (let i = 0; i < n; i++) keys.add(cardKey(cards[i]));
+  for (let i = 0; i < n - 1; i++) {
+    for (let j = i + 1; j < n; j++) {
+      if (keys.has(thirdCardKey(cards[i], cards[j]))) return true;
     }
   }
   return false;
