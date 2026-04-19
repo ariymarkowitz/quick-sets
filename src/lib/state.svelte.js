@@ -17,6 +17,13 @@ export const game = $state({
   gameOver: null,
 });
 
+function ensureBoardHasSet(cards, boardSize) {
+  const n = Math.min(boardSize, cards.length);
+  while (!hasSet(cards.slice(cards.length - n))) {
+    shuffle(cards);
+  }
+}
+
 let nextId = 0;
 const makeId = () => ++nextId;
 
@@ -154,7 +161,7 @@ function reshuffleAndDeal() {
 
   setTimeout(() => {
     const combined = [...activeEntries().map(e => e.card), ...game.deck];
-    shuffle(combined);
+    ensureBoardHasSet(combined, INITIAL_BOARD);
     game.deck = combined;
     game.board = [];
     selectedIds = [];
@@ -226,6 +233,7 @@ export function newGame() {
   selectedIds = [];
   game.board = [];
   game.deck = generateDeck();
+  ensureBoardHasSet(game.deck, INITIAL_BOARD);
   game.animating = false;
   game.gameActive = true;
   game.toast = '';
