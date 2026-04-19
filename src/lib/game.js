@@ -1,5 +1,3 @@
-// TODO [Claude]: Implement the game as a Progressive Web App
-
 const NUMBERS = [1, 2, 3];
 const SHAPES = ['oval', 'diamond', 'squiggle'];
 const FILLS = ['solid', 'striped', 'open'];
