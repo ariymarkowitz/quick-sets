@@ -1,5 +1,5 @@
-<script>
-  import { SHAPE_DATA, COLOR_MAP, SHAPE_NATIVE_W } from '../lib/constants.js';
+<script lang="ts">
+  import { SHAPE_DATA, COLOR_MAP, SHAPE_NATIVE_W } from '../lib/constants';
 </script>
 
 <svg class="hidden-svg" aria-hidden="true">

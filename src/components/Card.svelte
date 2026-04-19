@@ -1,12 +1,19 @@
-<script>
+<script lang="ts">
   import {
     CARD_W, CARD_H, SHAPE_W, SHAPE_PAD_X, SHAPE_SCALE,
     SHAPE_DATA, SHAPE_SLOT_H,
-  } from '../lib/constants.js';
+  } from '../lib/constants';
+  import type { BoardEntry } from '../lib/state.svelte';
+  import type { Card } from '../lib/game';
 
-  let { entry, onclick } = $props();
+  type Props = {
+    entry: BoardEntry & { card: Card };
+    onclick: () => void;
+  };
 
-  function onkeydown(e) {
+  let { entry, onclick }: Props = $props();
+
+  function onkeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onclick();

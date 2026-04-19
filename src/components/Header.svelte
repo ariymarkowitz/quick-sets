@@ -1,7 +1,7 @@
-<script>
-  import { game, newGame, devAutoMatch, devSkipToEnd } from '../lib/state.svelte.js';
-  import { toggleTheme } from '../lib/storage.js';
-  import { formatTime } from '../lib/game.js';
+<script lang="ts">
+  import { game, newGame, devAutoMatch, devSkipToEnd } from '../lib/state.svelte';
+  import { toggleTheme } from '../lib/storage';
+  import { formatTime } from '../lib/game';
   import Toast from './Toast.svelte';
 
   const isDev = import.meta.env.DEV;

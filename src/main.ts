@@ -5,5 +5,8 @@ import { initTheme } from './lib/storage.js';
 
 initTheme();
 
-const app = mount(App, { target: document.getElementById('app') });
+const target = document.getElementById('app');
+if (!target) throw new Error('#app element not found');
+
+const app = mount(App, { target });
 export default app;

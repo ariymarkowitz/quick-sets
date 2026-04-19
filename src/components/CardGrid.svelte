@@ -1,5 +1,5 @@
-<script>
-  import { game, handleCardClick } from '../lib/state.svelte.js';
+<script lang="ts">
+  import { game, handleCardClick } from '../lib/state.svelte';
   import Card from './Card.svelte';
 </script>
 
@@ -8,7 +8,8 @@
     {#if entry.status === 'placeholder'}
       <div class="card-placeholder" aria-hidden="true"></div>
     {:else}
-      <Card {entry} onclick={() => handleCardClick(entry.id)} />
+      {@const cardEntry = entry as typeof entry & { card: NonNullable<typeof entry.card> }}
+      <Card entry={cardEntry} onclick={() => handleCardClick(entry.id)} />
     {/if}
   {/each}
 </main>

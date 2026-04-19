@@ -1,6 +1,6 @@
-<script>
-  import { game, newGame } from '../lib/state.svelte.js';
-  import { formatTime } from '../lib/game.js';
+<script lang="ts">
+  import { game, newGame } from '../lib/state.svelte';
+  import { formatTime } from '../lib/game';
 
   function playAgain() {
     game.gameOver = null;
