@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { game } from '../lib/state.svelte';
+  import { game, newGame } from '../lib/state.svelte';
   import { formatTime } from '../lib/game';
   import Modal from './Modal.svelte';
 
@@ -8,7 +8,7 @@
   }
 
   function afterClose() {
-    game.menuOpen = true;
+    newGame();
   }
 </script>
 

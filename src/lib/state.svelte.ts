@@ -300,6 +300,10 @@ export function openMenu(): void {
   game.menuOpen = true;
   if (game.gameActive && pausedAt === null) {
     pausedAt = Date.now();
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = null;
+    }
   }
 }
 
@@ -310,6 +314,9 @@ export function closeMenu(): void {
   if (pausedAt !== null) {
     gameStartTime += Date.now() - pausedAt;
     pausedAt = null;
+    timerId = setInterval(() => {
+      game.elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+    }, 1000);
   }
 }
 

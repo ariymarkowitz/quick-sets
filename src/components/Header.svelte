@@ -1,4 +1,5 @@
 <script lang="ts">
+  // TODO [Claude]: Timer keeps going while paused
   import { game, openMenu, devAutoMatch, devSkipToEnd } from '../lib/state.svelte';
   import { formatTime } from '../lib/game';
   import Toast from './Toast.svelte';

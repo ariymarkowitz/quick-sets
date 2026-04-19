@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { game, newGame, closeMenu, setMode } from '../lib/state.svelte';
   import { formatTime } from '../lib/game';
   import { getTheme, toggleTheme, type Theme } from '../lib/storage';
@@ -7,17 +8,21 @@
   type View = 'main' | 'help' | 'leaderboard';
   let view: View = $state('main');
   let theme: Theme = $state(getTheme());
+  let mounted = $state(false);
+
+  onMount(() => { mounted = true; });
 
   function onThemeToggle() {
     theme = toggleTheme();
   }
 
+  // TODO [Claude]: Don't start or unpause the game until the modal leaves
   function onClose() {
     view = 'main';
   }
 </script>
 
-<Modal open={game.menuOpen} onclose={onClose}>
+<Modal open={game.menuOpen && mounted} onclose={onClose}>
   {#if view === 'main'}
     <h2 id="modal-title">Quick Sets</h2>
 
