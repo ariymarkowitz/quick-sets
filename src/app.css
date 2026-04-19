@@ -132,8 +132,8 @@ h1 {
   width: 1.4em;
   height: 1.4em;
   background-color: currentColor;
-  -webkit-mask: url('icons/mdi--cards.svg') no-repeat center / contain;
-  mask: url('icons/mdi--cards.svg') no-repeat center / contain;
+  -webkit-mask: url('./icons/mdi--cards.svg') no-repeat center / contain;
+  mask: url('./icons/mdi--cards.svg') no-repeat center / contain;
 }
 
 /* ─── Buttons ───────────────────────────────────────────────────────────────── */
@@ -173,13 +173,13 @@ button:active {
   width: 18px;
   height: 18px;
   background-color: var(--text);
-  -webkit-mask: url('icons/moon.svg') no-repeat center / contain;
-  mask: url('icons/moon.svg') no-repeat center / contain;
+  -webkit-mask: url('./icons/moon.svg') no-repeat center / contain;
+  mask: url('./icons/moon.svg') no-repeat center / contain;
 }
 
 body.dark #theme-toggle::before {
-  -webkit-mask-image: url('icons/sun.svg');
-  mask-image: url('icons/sun.svg');
+  -webkit-mask-image: url('./icons/sun.svg');
+  mask-image: url('./icons/sun.svg');
 }
 
 /* ─── Message Toast ─────────────────────────────────────────────────────────── */
