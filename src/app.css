@@ -9,7 +9,7 @@
   --border: #d0d0d0;
   --shadow: rgba(0,0,0,0.08);
   --shadow-hover: rgba(0,0,0,0.12);
-  --accent: #5b4fcf;
+  --accent: #7f52c3;
   --accent-glow: rgba(91, 79, 207, 0.25);
   --valid: #27ae60;
   --valid-glow: rgba(39, 174, 96, 0.35);
@@ -325,7 +325,7 @@ body.dark #theme-toggle::before {
   text-align: center;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
   border: 1px solid var(--border);
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, border 0.3s ease;;
   will-change: transform;
 }
 

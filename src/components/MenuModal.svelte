@@ -107,6 +107,7 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     overflow: hidden;
+    transition: border 0.3s ease;
   }
 
   .segmented-btn {

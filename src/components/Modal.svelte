@@ -12,8 +12,8 @@
 {#if open}
   <div id="modal-positioner">
     <div id="modal"
-      in:dealIn
-      out:dealOut
+      in:dealIn={{duration: 500}}
+      out:dealOut={{duration: 200}}
       onoutroend={onclose}
     >
       {@render children()}

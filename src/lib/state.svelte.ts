@@ -340,7 +340,7 @@ export function newGame(): void {
   hideModalThenRun(() => {
     performNewGameSetup();
     staggerBoardDealIn();
-    game.cardsVisible = true;
+    setTimeout(() => game.cardsVisible = true, 0);
   });
 }
 
