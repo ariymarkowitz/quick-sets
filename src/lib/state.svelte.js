@@ -1,4 +1,4 @@
-import { generateDeck, shuffle, isValidSet, hasSet } from './game.js';
+import { generateDeck, shuffle, isValidSet, hasSet, findSet } from './game.js';
 import { saveScore as persistScore, getScores } from './storage.js';
 import {
   INITIAL_BOARD, MIN_BOARD, DEAL_SETTLE_MS, DEAL_STAGGER_MS,
@@ -231,6 +231,30 @@ export function newGame() {
 
   dealCards(INITIAL_BOARD);
   setTimeout(() => checkGameState(), DEAL_SETTLE_MS);
+}
+
+export function devAutoMatch() {
+  if (!game.gameActive || game.animating) return;
+  const entries = game.board.filter(e => e.status !== 'removing' && e.status !== 'dealing');
+  const indices = findSet(entries.map(e => e.card));
+  if (!indices) return;
+  const ids = indices.map(i => entries[i].id);
+  for (const e of game.board) {
+    if (ids.includes(e.id)) e.status = 'selected';
+    else if (e.status === 'selected') e.status = null;
+  }
+  selectedIds = [...ids];
+  game.animating = true;
+  validateSelection();
+}
+
+export function devSkipToEnd() {
+  if (!game.gameActive) return;
+  game.deck = [];
+  game.board = [];
+  selectedIds = [];
+  game.animating = false;
+  endGame();
 }
 
 export function handleCardClick(id) {

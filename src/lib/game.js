@@ -1,5 +1,3 @@
-// TODO [Claude]: Create dev settings (only in dev mode) for auto matching sets or skipping to the end.
-
 // TODO [Claude]: Implement the game as a Progressive Web App
 
 const NUMBERS = [1, 2, 3];
@@ -61,17 +59,22 @@ function thirdCardKey(a, b) {
   return parts.join('|');
 }
 
-export function hasSet(cards) {
+export function findSet(cards) {
   const n = cards.length;
-  if (n < 3) return false;
-  const keys = new Set();
-  for (let i = 0; i < n; i++) keys.add(cardKey(cards[i]));
+  if (n < 3) return null;
+  const byKey = new Map();
+  for (let i = 0; i < n; i++) byKey.set(cardKey(cards[i]), i);
   for (let i = 0; i < n - 1; i++) {
     for (let j = i + 1; j < n; j++) {
-      if (keys.has(thirdCardKey(cards[i], cards[j]))) return true;
+      const k = byKey.get(thirdCardKey(cards[i], cards[j]));
+      if (k !== undefined && k !== i && k !== j) return [i, j, k];
     }
   }
-  return false;
+  return null;
+}
+
+export function hasSet(cards) {
+  return findSet(cards) !== null;
 }
 
 export function formatTime(seconds) {
