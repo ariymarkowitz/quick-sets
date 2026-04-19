@@ -326,15 +326,23 @@ body.dark #theme-toggle::before {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+}
+
+#modal-positioner {
+  position: fixed;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
   padding: 20px;
+  z-index: 100;
+  pointer-events: none;
 }
 
-#overlay.hidden {
-  display: none;
+#modal-positioner > #modal {
+  pointer-events: auto;
 }
 
 #modal {
@@ -347,6 +355,7 @@ body.dark #theme-toggle::before {
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
   border: 1px solid var(--border);
   transition: background-color 0.3s ease;
+  will-change: transform;
 }
 
 #modal-title {

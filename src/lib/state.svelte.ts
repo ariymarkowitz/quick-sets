@@ -27,6 +27,8 @@ export type GameOverInfo = {
   currentIdx: number;
 };
 
+export type GameMode = 'casual' | 'hardcore';
+
 export type GameState = {
   deck: Card[];
   board: BoardEntry[];
@@ -37,6 +39,8 @@ export type GameState = {
   toast: string;
   scores: number[];
   gameOver: GameOverInfo | null;
+  menuOpen: boolean;
+  mode: GameMode;
 };
 
 export const game: GameState = $state({
@@ -49,6 +53,8 @@ export const game: GameState = $state({
   toast: '',
   scores: [],
   gameOver: null,
+  menuOpen: true,
+  mode: 'casual',
 });
 
 function ensureBoardHasSet(cards: Card[], boardSize: number): void {
@@ -64,6 +70,7 @@ const makeId = (): number => ++nextId;
 let timerId: ReturnType<typeof setInterval> | null = null;
 let toastTimeout: ReturnType<typeof setTimeout> | null = null;
 let gameStartTime = 0;
+let pausedAt: number | null = null;
 let selectedIds: number[] = [];
 
 function setEntryStatus(id: number, newStatus: EntryStatus): void {
@@ -276,7 +283,9 @@ export function newGame(): void {
   game.toast = '';
   game.elapsed = 0;
   game.gameOver = null;
+  game.menuOpen = false;
 
+  pausedAt = null;
   gameStartTime = Date.now();
   timerId = setInterval(() => {
     game.elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
@@ -284,6 +293,28 @@ export function newGame(): void {
 
   dealCards(INITIAL_BOARD);
   setTimeout(() => checkGameState(), DEAL_SETTLE_MS);
+}
+
+export function openMenu(): void {
+  if (game.menuOpen) return;
+  game.menuOpen = true;
+  if (game.gameActive && pausedAt === null) {
+    pausedAt = Date.now();
+  }
+}
+
+export function closeMenu(): void {
+  if (!game.menuOpen) return;
+  if (!game.gameActive) return;
+  game.menuOpen = false;
+  if (pausedAt !== null) {
+    gameStartTime += Date.now() - pausedAt;
+    pausedAt = null;
+  }
+}
+
+export function setMode(mode: GameMode): void {
+  game.mode = mode;
 }
 
 export function devAutoMatch(): void {

@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { game, newGame, devAutoMatch, devSkipToEnd } from '../lib/state.svelte';
-  import { toggleTheme } from '../lib/storage';
+  import { game, openMenu, devAutoMatch, devSkipToEnd } from '../lib/state.svelte';
   import { formatTime } from '../lib/game';
   import Toast from './Toast.svelte';
 
@@ -21,8 +20,9 @@
       <button class="dev-btn" title="Auto-match a set" onclick={devAutoMatch}>▶</button>
       <button class="dev-btn" title="Skip to end" onclick={devSkipToEnd}>⏭</button>
     {/if}
-    <button id="theme-toggle" aria-label="Toggle theme" onclick={toggleTheme}></button>
-    <button id="new-game-btn" onclick={newGame}>New</button>
+    {#if game.gameActive}
+      <button id="pause-btn" aria-label="Pause" title="Pause" onclick={openMenu}>⏸</button>
+    {/if}
   </div>
 </header>
 
