@@ -1,5 +1,5 @@
 <script>
-  import { toast } from '../lib/stores.js';
+  import { game } from '../lib/state.svelte.js';
 </script>
 
-<div id="message-toast" class:hidden={!$toast}>{$toast}</div>
+<div id="message-toast" class:hidden={!game.toast}>{game.toast}</div>

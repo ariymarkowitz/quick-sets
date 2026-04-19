@@ -1,5 +1,5 @@
 <script>
-  import { elapsed, deckCount, newGame } from '../lib/stores.js';
+  import { game, newGame } from '../lib/state.svelte.js';
   import { toggleTheme } from '../lib/storage.js';
   import { formatTime } from '../lib/game.js';
   import Toast from './Toast.svelte';
@@ -7,10 +7,10 @@
 
 <header>
   <div class="header-group">
-    <span id="timer">{formatTime($elapsed)}</span>
+    <span id="timer">{formatTime(game.elapsed)}</span>
     <span id="deck-count">
       <span class="header-icon" aria-hidden="true"></span>
-      <span id="deck-count-num">{$deckCount}</span>
+      <span id="deck-count-num">{game.deck.length}</span>
     </span>
   </div>
   <Toast />
