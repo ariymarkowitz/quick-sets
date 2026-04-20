@@ -206,6 +206,39 @@ body.dark #theme-toggle::before {
   mask-image: url('./icons/sun.svg');
 }
 
+#hint-btn, #pause-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+#hint-btn::before, #pause-btn::before {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 20px;
+  background-color: var(--text);
+}
+
+#hint-btn::before {
+  -webkit-mask: url('./icons/mdi--lightbulb-on.svg') no-repeat center / contain;
+  mask: url('./icons/mdi--lightbulb-on.svg') no-repeat center / contain;
+}
+
+#pause-btn::before {
+  -webkit-mask: url('./icons/mdi--pause.svg') no-repeat center / contain;
+  mask: url('./icons/mdi--pause.svg') no-repeat center / contain;
+}
+
+#pause-btn[aria-label="Resume"]::before {
+  -webkit-mask-image: url('./icons/mdi--play.svg');
+  mask-image: url('./icons/mdi--play.svg');
+}
+
 /* ─── Message Toast ─────────────────────────────────────────────────────────── */
 
 #message-toast {
@@ -369,7 +402,7 @@ body.dark #theme-toggle::before {
   font-size: 1.75rem;
   font-weight: 800;
   color: var(--accent);
-  margin-bottom: 12px;
+  margin-bottom: 24px;
 }
 
 #final-time-display {

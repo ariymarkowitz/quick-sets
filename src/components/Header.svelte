@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { game, openMenu, devAutoMatch, devSkipToEnd, useHint } from '../lib/state.svelte';
+  import { game, openMenu, closeMenu, devAutoMatch, devSkipToEnd, useHint } from '../lib/state.svelte';
   import { formatTime } from '../lib/game';
   import Toast from './Toast.svelte';
 
@@ -21,8 +21,8 @@
       <button class="dev-btn" title="Skip to end" onclick={devSkipToEnd}>⏭</button>
     {/if}
     {#if game.gameActive}
-      <button id="hint-btn" aria-label="Hint" title="Hint (disables leaderboard)" onclick={useHint}>💡</button>
-      <button id="pause-btn" aria-label="Pause" title="Pause" onclick={openMenu}>⏸</button>
+      <button id="hint-btn" aria-label="Hint" title="Hint (disables leaderboard)" onclick={useHint}></button>
+      <button id="pause-btn" aria-label={game.menuOpen ? 'Resume' : 'Pause'} title={game.menuOpen ? 'Resume' : 'Pause'} onclick={game.menuOpen ? closeMenu : openMenu}></button>
     {/if}
   </div>
 </header>

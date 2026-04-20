@@ -35,13 +35,13 @@
           class="segmented-btn"
           class:active={game.mode === 'chill'}
           onclick={() => (game.mode = 'chill')}
-        >Chill</button>
+        ><span class="mode-icon tortoise-icon"></span>Chill</button>
         <button
           type="button"
           class="segmented-btn"
           class:active={game.mode === 'speedy'}
           onclick={() => (game.mode = 'speedy')}
-        >Speedy</button>
+        ><span class="mode-icon rabbit-icon"></span>Speedy</button>
       </div>
       <button
         id="menu-theme-toggle"
@@ -111,6 +111,28 @@
     font-size: 0.92rem;
     font-weight: 600;
     color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .mode-icon {
+    display: inline-block;
+    width: 1.1em;
+    height: 1.1em;
+    background-color: currentColor;
+    flex-shrink: 0;
+  }
+
+  .tortoise-icon {
+    -webkit-mask: url('../icons/mdi--tortoise.svg') no-repeat center / contain;
+    mask: url('../icons/mdi--tortoise.svg') no-repeat center / contain;
+  }
+
+  .rabbit-icon {
+    -webkit-mask: url('../icons/mdi--rabbit.svg') no-repeat center / contain;
+    mask: url('../icons/mdi--rabbit.svg') no-repeat center / contain;
   }
 
   .segmented-btn + .segmented-btn {
@@ -175,8 +197,8 @@
 
   .help-text ul {
     margin-top: 10px;
+    margin-bottom: 10px;
     padding-left: 20px;
-    margin-bottom: 0;
   }
 
   .empty-scores {
