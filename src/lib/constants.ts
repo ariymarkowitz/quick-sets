@@ -29,11 +29,11 @@ export const TOAST_MS = 2500;
 
 export const MODE_TIMINGS = {
   speedy: {
-    dealDuration: 150, removeDuration: 130, stagger: 20,
+    dealDuration: 150, removeDuration: 130, stagger: 20, fastStagger: 20,
     validFlash: 120, invalidFlash: 180, shakeDuration: 150,
   },
   chill: {
-    dealDuration: 280, removeDuration: 240, stagger: 55,
+    dealDuration: 280, removeDuration: 240, stagger: 100, fastStagger: 20,
     validFlash: 260, invalidFlash: 340, shakeDuration: 260,
   },
 } as const;

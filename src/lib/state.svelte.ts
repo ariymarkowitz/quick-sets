@@ -221,10 +221,10 @@ function checkGameState(): void {
 }
 
 function hideCardsThenShowModal(prepareModal: () => void): void {
-  staggerRemoveDelays(game.activeEntries);
+  staggerRemoveDelays(game.activeEntries, game.animSettings.fastStagger);
   for (const entry of game.activeEntries) entry.status = 'removing';
   selectedIds = [];
-  const outroTotal = totalRemoveDuration(game.activeEntries.length);
+  const outroTotal = totalRemoveDuration(game.activeEntries.length, game.animSettings.fastStagger);
   setTimeout(() => {
     game.cardsVisible = false;
     prepareModal();
@@ -241,12 +241,12 @@ function staggerDealDelays(entries: BoardEntry[]): void {
   entries.forEach((entry, i) => { entry.dealDelay = i * game.animSettings.stagger; });
 }
 
-function staggerRemoveDelays(entries: BoardEntry[]): void {
-  entries.forEach((entry, i) => { entry.removeDelay = i * game.animSettings.stagger; });
+function staggerRemoveDelays(entries: BoardEntry[], stagger = game.animSettings.stagger): void {
+  entries.forEach((entry, i) => { entry.removeDelay = i * stagger; });
 }
 
-function totalRemoveDuration(n: number): number {
-  return n * game.animSettings.stagger + game.animSettings.removeDuration;
+function totalRemoveDuration(n: number, stagger = game.animSettings.stagger): number {
+  return n * stagger + game.animSettings.removeDuration;
 }
 
 function scheduleDealClears(entries: BoardEntry[]): void {
