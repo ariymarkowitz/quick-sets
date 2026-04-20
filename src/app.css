@@ -227,6 +227,7 @@ body.dark #theme-toggle::before {
   border: 2.5px solid var(--card-border);
   border-radius: 14px;
   cursor: pointer;
+  touch-action: none;
   display: flex;
   align-items: center;
   justify-content: center;

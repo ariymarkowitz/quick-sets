@@ -13,6 +13,11 @@
 
   let { entry, onclick }: Props = $props();
 
+  function onpointerdown(e: PointerEvent) {
+    e.preventDefault();
+    onclick();
+  }
+
   function onkeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -29,7 +34,7 @@
   class:hint={entry.status === 'hint'}
   role="button"
   tabindex="0"
-  {onclick}
+  {onpointerdown}
   {onkeydown}
 >
   <svg viewBox="0 0 {CARD_W} {CARD_H}" class="card-svg" preserveAspectRatio="xMidYMid meet">
