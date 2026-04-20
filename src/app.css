@@ -258,8 +258,11 @@ body.dark #theme-toggle::before {
 .card.valid {
   border-color: var(--valid) !important;
   box-shadow: 0 0 0 3px var(--valid-glow), 0 5px 16px var(--shadow-hover) !important;
-  /* animation: pulse-valid 0.15s ease forwards; */
   transform: translateY(-4px);
+}
+
+.card.valid.chill {
+  animation: pulse-valid 0.3s ease forwards; 
 }
 
 .card.invalid {

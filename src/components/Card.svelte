@@ -3,6 +3,7 @@
     CARD_W, CARD_H, SHAPE_W, SHAPE_PAD_X, SHAPE_SCALE,
     SHAPE_DATA, SHAPE_SLOT_H,
   } from '../lib/constants';
+  import { game } from '../lib/state.svelte';
   import type { BoardEntry } from '../lib/state.svelte';
   import type { Card } from '../lib/game';
 
@@ -32,6 +33,7 @@
   class:valid={entry.status === 'valid'}
   class:invalid={entry.status === 'invalid'}
   class:hint={entry.status === 'hint'}
+  class:chill={game.mode === 'chill'}
   role="button"
   tabindex="0"
   {onpointerdown}

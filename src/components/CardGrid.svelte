@@ -1,6 +1,8 @@
 <script lang="ts">
   import { game, handleCardClick } from '../lib/state.svelte';
   import Card from './Card.svelte';
+
+  const isChill = $derived(game.mode === 'chill');
 </script>
 
 <main id="card-grid">
@@ -17,6 +19,7 @@
           class="card-inner"
           class:dealing={entry.status === 'dealing'}
           class:removing={entry.status === 'removing'}
+          class:chill={isChill}
           style="--deal-delay:{entry.dealDelay}ms; --remove-delay:{entry.removeDelay}ms"
         >
           <Card entry={cardEntry} onclick={() => handleCardClick(entry.id)} />
@@ -68,11 +71,28 @@
     }
   }
 
+  @keyframes dealOutChill {
+    from {
+      opacity: 1;
+      translate: 0 0;
+      scale: 1;
+    }
+    to {
+      opacity: 0;
+      translate: 0 -24px;
+      scale: 0.93;
+    }
+  }
+
   .card-inner.dealing {
     animation: dealIn var(--deal-duration) var(--deal-delay) both cubic-bezier(0.33, 1, 0.68, 1);
   }
 
   .card-inner.removing {
     animation: dealOut var(--remove-duration) var(--remove-delay) forwards;
+  }
+
+  .card-inner.chill.removing {
+    animation: dealOutChill var(--remove-duration) var(--remove-delay) forwards cubic-bezier(0.4, 0, 0.6, 1);
   }
 </style>
