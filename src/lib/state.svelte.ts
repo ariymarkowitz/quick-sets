@@ -4,7 +4,6 @@ import {
   INITIAL_BOARD, MIN_BOARD, DEAL_SETTLE_MS, DEAL_STAGGER_MS, DEAL_DURATION_MS,
   VALID_FLASH_MS, INVALID_FLASH_MS, REMOVE_ANIM_MS, TOAST_MS,
 } from './constants.js';
-import { flushSync } from 'svelte';
 
 export type EntryStatus =
   | null
@@ -200,7 +199,7 @@ function removeAndReplenish(idsToRemove: number[]): void {
     game.animating = false;
     checkPendingSelection();
     setTimeout(checkGameState, DEAL_SETTLE_MS);
-  }, animSettings.removeDuration);
+  }, totalRemoveDuration(idsToRemove.length));
 }
 
 function reshuffleAndDeal(): void {
@@ -255,9 +254,11 @@ function checkGameState(): void {
 
 function hideCardsThenShowModal(prepareModal: () => void): void {
   staggerRemoveDelays(activeEntries);
+  for (const entry of activeEntries) entry.status = 'removing';
+  selectedIds = [];
   const outroTotal = totalRemoveDuration(activeEntries.length);
-  game.cardsVisible = false;
   setTimeout(() => {
+    game.cardsVisible = false;
     prepareModal();
     game.modalVisible = true;
   }, outroTotal);
@@ -270,12 +271,10 @@ function hideModalThenRun(action: () => void): void {
 
 function staggerDealDelays(entries: BoardEntry[]): void {
   entries.forEach((entry, i) => { entry.dealDelay = i * animSettings.stagger; });
-  flushSync();
 }
 
 function staggerRemoveDelays(entries: BoardEntry[]): void {
   entries.forEach((entry, i) => { entry.removeDelay = i * animSettings.stagger; });
-  flushSync();
 }
 
 function totalRemoveDuration(n: number): number {
@@ -347,7 +346,10 @@ export function closeMenu(): void {
       gameStartTime += Date.now() - pauseStart;
       game.paused = false;
     }
-    staggerDealDelays(game.board);
+    const dealable = game.board.filter(e => e.card !== null && e.status !== 'placeholder');
+    for (const e of dealable) e.status = 'dealing';
+    staggerDealDelays(dealable);
+    scheduleDealClears(dealable);
     game.cardsVisible = true;
   });
 }
