@@ -1,39 +1,32 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Project
-
-Quick Sets — a browser-based single-player implementation of the card game SET. Built with Svelte 5 + Vite + TypeScript, deployed to GitHub Pages.
+Quick Sets — browser-based single-player SET card game. Svelte 5 + Vite + TypeScript, deployed to GitHub Pages.
 
 ## Commands
 
-- `npm run dev` — Vite dev server
-- `npm run build` — production build to `dist/`
-- `npm run preview` — preview the built output
-- `npm run check` — run `svelte-check` (TypeScript type-checker)
-- `npm run deploy` — build and publish `dist/` to the `gh-pages` branch (also `scripts/sync-gh-pages.sh`)
-
-There is no test suite or linter configured.
+- `npm run dev` / `build` / `preview` / `check` / `deploy`
+- No test suite or linter.
 
 ## Guidelines
 
-Prefer using reusable components to duplicated code. Think about modularity, simplicity, elegance, and readability.
-
-Use Svelte 5 runes instead of stores to manage reactive state. Use derived state and effects instead of cached values, functions, and updater functions whenever possible, especially when using nested reactive data structures.
+Prefer reusable components. Use Svelte 5 runes (not stores); prefer derived state and effects over cached values, especially with nested reactive structures.
 
 ## Architecture
 
-The app is a single-page Svelte 5 component tree mounted from [src/main.ts](src/main.ts) into [index.html](index.html). The root [src/App.svelte](src/App.svelte) composes `Header`, `CardGrid`, `GameOverModal`, `Toast`, and `SvgDefs`.
+[src/App.svelte](src/App.svelte) composes `Header`, `CardGrid`, `GameOverModal`, `MenuModal`, `SvgDefs`.
 
-State and game flow live in [src/lib/state.svelte.ts](src/lib/state.svelte.ts) — this is the single source of truth. State is a single Svelte 5 `$state` object (`game: GameState`) exported directly; components read its properties reactively and call exported actions (`newGame`, `handleCardClick`, `devAutoMatch`, `devSkipToEnd`). Components do not mutate game state directly.
+**State** lives entirely in [src/lib/state.svelte.ts](src/lib/state.svelte.ts) as a `GameState` class instance (`game`) with `$state` fields. Components read reactively and call exported actions; they never mutate state directly. Actions: `newGame`, `handleCardClick`, `openMenu`, `closeMenu`, `useHint`, `devAutoMatch`, `devSkipToEnd`.
 
-Key invariants in [state.svelte.ts](src/lib/state.svelte.ts):
+Key invariants:
+- `BoardEntry { id, card, status, dealDelay, removeDelay }` — `status`: `null | 'dealing' | 'selected' | 'valid' | 'invalid' | 'removing' | 'placeholder' | 'hint'`. `id` is monotonic so animations survive concurrent mutations. `'placeholder'` keeps layout when deck is empty; `'hint'` highlights a valid set (sets `hintsUsed`, disqualifying the score).
+- `animating` serializes animations; buffered clicks in `selectedIds` are replayed via `checkPendingSelection`.
+- `checkGameState` tops up the board to `MIN_BOARD`, reshuffles when no set exists, ends the game when board ∪ deck has no set.
+- Modal transitions: `hideCardsThenShowModal` animates cards out then opens modal; `hideModalThenRun` stores action in `pendingAction` and closes modal first.
+- `menuOpen`/`paused`/`cardsVisible`/`modalVisible` coordinate menu ↔ game. Pause adjusts `gameStartTime` on resume.
+- `animSettings` is `$derived` from `MODE_TIMINGS[mode]` — all timings change with `'chill'`/`'speedy'` mode.
 
-- Each board slot is a `BoardEntry { id, card, status }` where `status` is one of `null | 'dealing' | 'selected' | 'valid' | 'invalid' | 'removing' | 'placeholder'`. `id` is a monotonic counter; cards are referenced by `id`, not index, so animations survive concurrent board mutations. `'placeholder'` slots appear when the deck is exhausted but a set was just removed — cards stay in place rather than collapsing.
-- The `animating` flag serializes set-validation/replenishment animations. Clicks made during animation are buffered in `selectedIds` and re-checked via `checkPendingSelection` when animation finishes.
-- `checkGameState` is the central post-animation hook: it tops the board up to `MIN_BOARD`, calls `reshuffleAndDeal` when no set exists on the current board (combining board + deck and re-dealing), and ends the game when no set exists in board ∪ deck.
+[MenuModal.svelte](src/components/MenuModal.svelte) — multi-view modal (main/help/leaderboard), wraps [Modal.svelte](src/components/Modal.svelte) (animated primitive, `open` prop, fires `onclose` after exit animation).
 
-Pure game logic (deck generation, `isValidSet`, `hasSet`, `findSet`, `formatTime`) is in [src/lib/game.ts](src/lib/game.ts). Animation timings and board sizes are in [src/lib/constants.ts](src/lib/constants.ts) along with SVG shape path data and the color palette consumed by [SvgDefs.svelte](src/components/SvgDefs.svelte). Local-storage persistence (top-5 scores, theme) lives in [src/lib/storage.ts](src/lib/storage.ts). The `bodyClass` Svelte action (syncs a class onto `document.body`) is in [src/lib/actions.ts](src/lib/actions.ts).
+Other modules: [game.ts](src/lib/game.ts) — pure logic (`isValidSet`, `hasSet`, `findSet`, `formatTime`). [constants.ts](src/lib/constants.ts) — timings, board sizes, `MODE_TIMINGS`, SVG paths/colors. [storage.ts](src/lib/storage.ts) — localStorage for top-5 scores, theme, mode. [actions.ts](src/lib/actions.ts) — `bodyClass` Svelte action.
 
-Card visuals are rendered via SVG `<symbol>` definitions emitted once by [SvgDefs.svelte](src/components/SvgDefs.svelte) and `<use>`-referenced from [Card.svelte](src/components/Card.svelte); striped fills use SVG `<pattern>` defs keyed by color.
+Card visuals: SVG `<symbol>` defs in [SvgDefs.svelte](src/components/SvgDefs.svelte), `<use>`-referenced from [Card.svelte](src/components/Card.svelte); striped fills via `<pattern>` defs keyed by color.
