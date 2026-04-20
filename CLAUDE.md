@@ -18,7 +18,7 @@ Prefer reusable components. Use Svelte 5 runes (not stores); prefer derived stat
 **State** lives entirely in [src/lib/state.svelte.ts](src/lib/state.svelte.ts) as a `GameState` class instance (`game`) with `$state` fields. Components read reactively and call exported actions; they never mutate state directly. Actions: `newGame`, `handleCardClick`, `openMenu`, `closeMenu`, `useHint`, `devAutoMatch`, `devSkipToEnd`.
 
 Key invariants:
-- `BoardEntry { id, card, status, dealDelay, removeDelay }` — `status`: `null | 'dealing' | 'selected' | 'valid' | 'invalid' | 'removing' | 'placeholder' | 'hint'`. `id` is monotonic so animations survive concurrent mutations. `'placeholder'` keeps layout when deck is empty; `'hint'` highlights a valid set (sets `hintsUsed`, disqualifying the score).
+- `BoardEntry { id, card, status, dealDelay, removeDelay }` — `status`: `null | 'dealing' | 'selected' | 'valid' | 'invalid' | 'removing' | 'placeholder' | 'hint'`. `id` is monotonic so animations survive concurrent mutations. `'placeholder'` keeps layout when deck is empty; `'hint'` is applied progressively — each `useHint()` call reveals one more card of the same set. `hintIds` stores the current hint set's IDs; reveal count is derived from how many of those entries have `status === 'hint'`. Using hints sets `hintsUsed`, disqualifying the score.
 - `animating` serializes animations; buffered clicks in `selectedIds` are replayed via `checkPendingSelection`.
 - `checkGameState` tops up the board to `MIN_BOARD`, reshuffles when no set exists, ends the game when board ∪ deck has no set.
 - Modal transitions: `hideCardsThenShowModal` animates cards out then opens modal; `hideModalThenRun` stores action in `pendingAction` and closes modal first.

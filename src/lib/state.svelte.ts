@@ -47,6 +47,7 @@ class GameState {
   modalVisible: boolean = $state(true);
   pendingAction: (() => void) | null = $state(null);
   hintsUsed: boolean = $state(false);
+  hintIds: number[] = $state([]);
   animSettings = $derived(MODE_TIMINGS[this.mode]);
   activeEntries = $derived(this.board.filter(e => e.status !== 'placeholder'));
 }
@@ -306,6 +307,7 @@ function performNewGameSetup(): void {
   game.menuOpen = false;
   game.paused = false;
   game.hintsUsed = false;
+  game.hintIds = [];
 
   gameStartTime = Date.now();
 
@@ -368,12 +370,24 @@ export function devAutoMatch(): void {
 
 export function useHint(): void {
   if (!game.gameActive || game.animating) return;
-  const ids = findBoardSet();
-  if (!ids) return;
+
   game.hintsUsed = true;
-  selectedIds = [];
-  for (const e of game.board) e.status = e.status === 'hint' || e.status === 'selected' ? null : e.status;
-  setStatusFor(ids, 'hint');
+
+  if (game.hintIds.length === 0) {
+    const ids = findBoardSet();
+    if (!ids) return;
+    for (const e of game.board) e.status = e.status === 'hint' || e.status === 'selected' ? null : e.status;
+    selectedIds = [];
+    game.hintIds = ids;
+  }
+
+  const currentlyRevealed = game.hintIds.filter(id =>
+    game.board.some(e => e.id === id && e.status === 'hint')
+  ).length;
+
+  if (currentlyRevealed < game.hintIds.length) {
+    setStatusFor([game.hintIds[currentlyRevealed]!], 'hint');
+  }
 }
 
 export function devSkipToEnd(): void {
@@ -398,6 +412,7 @@ export function handleCardClick(id: number): void {
   } else if (entry.status !== null && entry.status !== 'hint') return;
 
   for (const e of game.board) if (e.status === 'hint') e.status = null;
+  game.hintIds = [];
   setStatusFor([id], 'selected');
   selectedIds = [...selectedIds, id];
 
