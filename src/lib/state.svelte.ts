@@ -61,6 +61,13 @@ let pauseStart = 0;
 let selectedIds: number[] = [];
 
 $effect.root(() => {
+  try {
+    game.scores = getScores();
+    game.mode = getMode();
+  } catch (_) {
+    // ignore (e.g. SSR)
+  }
+
   $effect(() => {
     if (!game.gameActive || game.paused) return;
     const id = setInterval(() => {
@@ -78,14 +85,19 @@ $effect.root(() => {
   $effect(() => { setMode(game.mode); });
 });
 
-function setEntryStatus(id: number, newStatus: EntryStatus): void {
-  const entry = game.board.find(e => e.id === id);
-  if (entry) entry.status = newStatus;
+function setStatusFor(ids: number[], status: EntryStatus, from?: EntryStatus): void {
+  for (const e of game.board) {
+    if (ids.includes(e.id) && (from === undefined || e.status === from)) e.status = status;
+  }
 }
 
-function clearDealingStatus(id: number): void {
-  const entry = game.board.find(e => e.id === id);
-  if (entry && entry.status === 'dealing') entry.status = null;
+function findBoardSet(): number[] | null {
+  const entries = game.board.filter(
+    e => e.status !== 'removing' && e.status !== 'dealing' && e.status !== 'placeholder' && e.card !== null,
+  );
+  const indices = findSet(entries.map(e => e.card as Card));
+  if (!indices) return null;
+  return indices.map(i => entries[i]!.id);
 }
 
 function dealCards(n: number): BoardEntry[] {
@@ -103,7 +115,7 @@ function dealCards(n: number): BoardEntry[] {
   return newEntries;
 }
 
-function checkPendingSelection(): void {
+function tryValidateSelection(): void {
   const existingIds = new Set(game.board.map(e => e.id));
   selectedIds = selectedIds.filter(id => existingIds.has(id));
 
@@ -124,19 +136,19 @@ function validateSelection(): void {
   const ids = [a.id, b.id, c.id];
 
   if (a.card && b.card && c.card && isValidSet(a.card, b.card, c.card)) {
-    for (const e of game.board) if (ids.includes(e.id)) e.status = 'valid';
+    setStatusFor(ids, 'valid');
     game.setsFound += 1;
     game.toast = '';
     selectedIds = [];
     setTimeout(() => removeAndReplenish(ids), game.animSettings.validFlash);
   } else {
-    for (const e of game.board) if (ids.includes(e.id)) e.status = 'invalid';
+    setStatusFor(ids, 'invalid');
     selectedIds = [];
     game.toast = 'Not a set!';
     setTimeout(() => {
-      for (const e of game.board) if (ids.includes(e.id) && e.status === 'invalid') e.status = null;
+      setStatusFor(ids, null, 'invalid');
       game.animating = false;
-      checkPendingSelection();
+      tryValidateSelection();
     }, game.animSettings.invalidFlash);
   }
 }
@@ -165,7 +177,7 @@ function removeAndReplenish(idsToRemove: number[]): void {
     staggerDealDelays(replacingEntries);
     scheduleDealClears(replacingEntries);
     game.animating = false;
-    checkPendingSelection();
+    tryValidateSelection();
     setTimeout(checkGameState, DEAL_SETTLE_MS);
   }, totalRemoveDuration(idsToRemove.length));
 }
@@ -212,7 +224,7 @@ function checkGameState(): void {
   const boardCards = game.activeEntries.map(e => e.card).filter((c): c is Card => c !== null);
   if (hasSet(boardCards)) return;
 
-  if (game.deck.length === 0 || !hasSet([...boardCards, ...game.deck])) {
+  if (!hasSet([...boardCards, ...game.deck])) {
     endGame();
     return;
   }
@@ -250,7 +262,13 @@ function totalRemoveDuration(n: number, stagger = game.animSettings.stagger): nu
 }
 
 function scheduleDealClears(entries: BoardEntry[]): void {
-  entries.forEach(e => setTimeout(() => clearDealingStatus(e.id), e.dealDelay + game.animSettings.dealDuration));
+  entries.forEach(e => {
+    const { id, dealDelay } = e;
+    setTimeout(() => {
+      const entry = game.board.find(x => x.id === id);
+      if (entry && entry.status === 'dealing') entry.status = null;
+    }, dealDelay + game.animSettings.dealDuration);
+  });
 }
 
 function ensureBoardHasSet(cards: Card[], boardSize: number): void {
@@ -265,20 +283,13 @@ function endGame(): void {
 
   const elapsedValue = game.elapsed;
   const title = VICTORY_MESSAGES[Math.floor(Math.random() * VICTORY_MESSAGES.length)];
-
-  if (game.hintsUsed) {
-    game.scores = getScores();
-    hideCardsThenShowModal(() => {
-      game.gameOver = { title, time: elapsedValue, scores: game.scores, currentIdx: -1, disqualified: true };
-    });
-  } else {
-    const newScores = persistScore(elapsedValue);
-    game.scores = newScores;
-    const currentIdx = newScores.indexOf(elapsedValue);
-    hideCardsThenShowModal(() => {
-      game.gameOver = { title, time: elapsedValue, scores: newScores, currentIdx, disqualified: false };
-    });
-  }
+  const disqualified = game.hintsUsed;
+  const scores = disqualified ? getScores() : persistScore(elapsedValue);
+  const currentIdx = disqualified ? -1 : scores.indexOf(elapsedValue);
+  game.scores = scores;
+  hideCardsThenShowModal(() => {
+    game.gameOver = { title, time: elapsedValue, scores, currentIdx, disqualified };
+  });
 }
 
 function performNewGameSetup(): void {
@@ -300,6 +311,12 @@ function performNewGameSetup(): void {
 
   dealCards(INITIAL_BOARD);
   setTimeout(() => checkGameState(), DEAL_SETTLE_MS);
+}
+
+export function runPendingAction(): void {
+  const a = game.pendingAction;
+  game.pendingAction = null;
+  a?.();
 }
 
 export function newGame(): void {
@@ -338,12 +355,8 @@ export function closeMenu(): void {
 
 export function devAutoMatch(): void {
   if (!game.gameActive || game.animating) return;
-  const entries = game.board.filter(
-    e => e.status !== 'removing' && e.status !== 'dealing' && e.status !== 'placeholder' && e.card !== null,
-  );
-  const indices = findSet(entries.map(e => e.card as Card));
-  if (!indices) return;
-  const ids = indices.map(i => entries[i]!.id);
+  const ids = findBoardSet();
+  if (!ids) return;
   for (const e of game.board) {
     if (ids.includes(e.id)) e.status = 'selected';
     else if (e.status === 'selected') e.status = null;
@@ -355,16 +368,12 @@ export function devAutoMatch(): void {
 
 export function useHint(): void {
   if (!game.gameActive || game.animating) return;
-  const entries = game.board.filter(
-    e => e.status !== 'removing' && e.status !== 'dealing' && e.status !== 'placeholder' && e.card !== null,
-  );
-  const indices = findSet(entries.map(e => e.card as Card));
-  if (!indices) return;
-  const ids = indices.map(i => entries[i]!.id);
+  const ids = findBoardSet();
+  if (!ids) return;
   game.hintsUsed = true;
   selectedIds = [];
   for (const e of game.board) e.status = e.status === 'hint' || e.status === 'selected' ? null : e.status;
-  for (const e of game.board) if (ids.includes(e.id)) e.status = 'hint';
+  setStatusFor(ids, 'hint');
 }
 
 export function devSkipToEnd(): void {
@@ -383,24 +392,14 @@ export function handleCardClick(id: number): void {
   if (!entry) return;
 
   if (entry.status === 'selected') {
-    setEntryStatus(id, null);
+    setStatusFor([id], null);
     selectedIds = selectedIds.filter(x => x !== id);
     return;
   } else if (entry.status !== null && entry.status !== 'hint') return;
 
   for (const e of game.board) if (e.status === 'hint') e.status = null;
-  setEntryStatus(id, 'selected');
+  setStatusFor([id], 'selected');
   selectedIds = [...selectedIds, id];
 
-  if (selectedIds.length === 3 && !game.animating) {
-    game.animating = true;
-    validateSelection();
-  }
-}
-
-try {
-  game.scores = getScores();
-  game.mode = getMode();
-} catch (_) {
-  // ignore (e.g. SSR)
+  tryValidateSelection();
 }

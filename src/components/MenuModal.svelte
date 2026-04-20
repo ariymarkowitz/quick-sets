@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { game, newGame, closeMenu } from '../lib/state.svelte';
+  import { game, newGame, closeMenu, runPendingAction } from '../lib/state.svelte';
   import { formatTime } from '../lib/game';
   import { getTheme, toggleTheme, type Theme } from '../lib/storage';
   import Modal from './Modal.svelte';
@@ -17,9 +17,7 @@
   }
 
   function onClose() {
-    const a = game.pendingAction;
-    game.pendingAction = null;
-    a?.();
+    runPendingAction();
     view = 'main';
   }
 </script>
