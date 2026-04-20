@@ -69,7 +69,7 @@
       <p>Find a <strong>set</strong> of three cards where, for each of the four features, all cards match or all differ.</p>
       <ul>
         <li><strong>Number:</strong> 1, 2, or 3 shapes</li>
-        <li><strong>Shape:</strong> diamond, squiggle, or oval</li>
+        <li><strong>Shape:</strong> diamond, oval, or squiggle</li>
         <li><strong>Shading:</strong> solid, striped, or open</li>
         <li><strong>Color:</strong> red, green, or purple</li>
       </ul>
