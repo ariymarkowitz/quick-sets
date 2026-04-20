@@ -11,7 +11,7 @@ export default defineConfig({
         name: 'Quick Sets',
         short_name: 'Quick Sets',
         description: 'Single-player SET-based card game',
-        theme_color: '#7c3aed',
+        theme_color: '#7f52c3',
         background_color: '#ffffff',
         display: 'standalone',
         icons: [

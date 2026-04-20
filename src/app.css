@@ -65,7 +65,7 @@ body::after {
   inset: 0;
   z-index: -1;
   background-size: 350px 350px;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.45s ease;
   pointer-events: none;
 }
 

@@ -65,7 +65,6 @@
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border);
     transition: background-color 0.3s ease, border 0.3s ease;
-    will-change: transform;
     animation: modalIn 500ms cubic-bezier(0.33, 1, 0.68, 1) both;
   }
 

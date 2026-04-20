@@ -39,15 +39,6 @@
     gap: 8px;
   }
 
-  h1 {
-    font-size: 1.35rem;
-    font-weight: 800;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--accent);
-    flex-shrink: 0;
-  }
-
   .header-group {
     height: 100%;
     display: flex;
@@ -65,13 +56,14 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: var(--text);
-    transition: color 0.3s ease;
+    transition: color 0.15s ease;
     min-width: 3ch;
   }
 
   #deck-count {
     font-size: 1rem;
     color: var(--text-muted);
+    transition: color 0.15s ease;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
@@ -83,33 +75,9 @@
     width: 1.4em;
     height: 1.4em;
     background-color: currentColor;
+    transition: background-color 0.15s ease;
     -webkit-mask: url('../icons/mdi--cards.svg') no-repeat center / contain;
     mask: url('../icons/mdi--cards.svg') no-repeat center / contain;
-  }
-
-  #theme-toggle {
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-  }
-
-  #theme-toggle::before {
-    content: '';
-    display: block;
-    width: 18px;
-    height: 18px;
-    background-color: var(--text);
-    -webkit-mask: url('../icons/moon.svg') no-repeat center / contain;
-    mask: url('../icons/moon.svg') no-repeat center / contain;
-  }
-
-  :global(body.dark) #theme-toggle::before {
-    -webkit-mask-image: url('../icons/sun.svg');
-    mask-image: url('../icons/sun.svg');
   }
 
   #hint-btn,
@@ -130,6 +98,7 @@
     width: 20px;
     height: 20px;
     background-color: var(--text);
+    transition: background-color 0.15s ease;
   }
 
   #hint-btn::before {
