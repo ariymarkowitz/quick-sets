@@ -13,8 +13,10 @@ The game ends when there are no sets among the remaining cards (deck + board com
 ## Features
 
 - Light/dark theme toggle
+- Different UI speeds for casual play and speedrunning
+- Hints (if you really want to cheat)
 - Auto-reshuffle when no sets exist on the board
 - Top 5 leaderboard saved locally
-- Works well on mobile browsers (hopefully, haven't tested it yet)
+- Works well on mobile browsers
 
 Made with the help of Claude.
