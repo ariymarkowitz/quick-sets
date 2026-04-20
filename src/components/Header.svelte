@@ -14,7 +14,7 @@
       <span id="deck-count-num">{game.deck.length}</span>
     </span>
   </div>
-  <Toast />
+  <div class="toast-wrapper"><Toast /></div>
   <div class="header-group">
     {#if isDev}
       <button class="dev-btn" title="Auto-match a set" onclick={devAutoMatch}>▶</button>
@@ -37,6 +37,13 @@
     top: 0;
     z-index: 10;
     gap: 8px;
+  }
+
+  .toast-wrapper {
+    flex: 1;
+    align-self: stretch;
+    position: relative;
+    overflow: visible;
   }
 
   .header-group {

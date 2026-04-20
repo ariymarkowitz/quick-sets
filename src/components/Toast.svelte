@@ -6,6 +6,11 @@
 
 <style>
   #message-toast {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
     text-align: center;
     padding: 7px 16px;
     min-height: 34px;
@@ -17,6 +22,5 @@
 
   #message-toast.hidden {
     opacity: 0;
-    pointer-events: none;
   }
 </style>
