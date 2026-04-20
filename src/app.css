@@ -15,6 +15,8 @@
   --valid-glow: rgba(39, 174, 96, 0.35);
   --invalid: #e74c3c;
   --invalid-glow: rgba(231, 76, 60, 0.35);
+  --hint-highlight: #ffc335;
+  --hint-glow: rgba(255, 195, 53, 0.35);
   --card-bg: #ffffff;
   --card-border: #e0e0e0;
 }
@@ -262,7 +264,13 @@ body.dark #theme-toggle::before {
 .card.invalid {
   border-color: var(--invalid) !important;
   box-shadow: 0 0 0 3px var(--invalid-glow) !important;
-  animation: shake 0.15s ease forwards;
+  animation: shake var(--shake-duration, 0.15s) ease forwards;
+}
+
+.card.hint {
+  border-color: var(--hint-highlight) !important;
+  box-shadow: 0 0 0 3px var(--hint-glow), 0 5px 14px var(--shadow-hover) !important;
+  transform: translateY(-2px);
 }
 
 

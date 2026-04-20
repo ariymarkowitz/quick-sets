@@ -13,6 +13,9 @@
 <Modal open={game.modalVisible && !!game.gameOver} onclose={onClose}>
   <h2 id="modal-title">{game.gameOver?.title}</h2>
   <p id="final-time-display">{formatTime(game.gameOver?.time ?? 0)}</p>
+  {#if game.gameOver?.disqualified}
+    <p class="disqualified-note">Hint used — time not saved to leaderboard</p>
+  {/if}
   <h3>Top Times</h3>
   <ol id="leaderboard-list">
     {#each game.gameOver?.scores ?? [] as s, i}
@@ -23,3 +26,11 @@
   </ol>
   <button id="play-again-btn" onclick={newGame}>Play Again</button>
 </Modal>
+
+<style>
+  .disqualified-note {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+</style>

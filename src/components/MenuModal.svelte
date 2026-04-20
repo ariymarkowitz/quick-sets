@@ -34,15 +34,15 @@
         <button
           type="button"
           class="segmented-btn"
-          class:active={game.mode === 'casual'}
-          onclick={() => (game.mode = 'casual')}
-        >Casual</button>
+          class:active={game.mode === 'chill'}
+          onclick={() => (game.mode = 'chill')}
+        >Chill</button>
         <button
           type="button"
           class="segmented-btn"
-          class:active={game.mode === 'hardcore'}
-          onclick={() => (game.mode = 'hardcore')}
-        >Hardcore</button>
+          class:active={game.mode === 'speedy'}
+          onclick={() => (game.mode = 'speedy')}
+        >Speedy</button>
       </div>
     </div>
 

@@ -4,12 +4,13 @@
   import GameOverModal from './components/GameOverModal.svelte';
   import MenuModal from './components/MenuModal.svelte';
   import SvgDefs from './components/SvgDefs.svelte';
-  import { animSettings } from './lib/state.svelte';
+  import { game } from './lib/state.svelte';
 
   $effect(() => {
     const root = document.documentElement.style;
-    root.setProperty('--deal-duration', `${animSettings.dealDuration}ms`);
-    root.setProperty('--remove-duration', `${animSettings.removeDuration}ms`);
+    root.setProperty('--deal-duration', `${game.animSettings.dealDuration}ms`);
+    root.setProperty('--remove-duration', `${game.animSettings.removeDuration}ms`);
+    root.setProperty('--shake-duration', `${game.animSettings.shakeDuration}ms`);
   });
 </script>
 

@@ -25,11 +25,17 @@ export const SHAPE_DATA: Record<ShapeName, { d: string; h: number }> = {
 
 export const SHAPE_SLOT_H = Math.max(...Object.values(SHAPE_DATA).map(s => s.h)) * SHAPE_SCALE * (1 + GAP_SCALE);
 
-export const DEAL_STAGGER_MS = 20;
-export const DEAL_DURATION_MS = 150;
-export const VALID_FLASH_MS = 120;
-export const INVALID_FLASH_MS = 180;
-export const REMOVE_ANIM_MS = 130;
 export const TOAST_MS = 2500;
+
+export const MODE_TIMINGS = {
+  speedy: {
+    dealDuration: 150, removeDuration: 130, stagger: 20,
+    validFlash: 120, invalidFlash: 180, shakeDuration: 150,
+  },
+  chill: {
+    dealDuration: 280, removeDuration: 240, stagger: 55,
+    validFlash: 260, invalidFlash: 340, shakeDuration: 260,
+  },
+} as const;
 export const INITIAL_BOARD = 12;
 export const MIN_BOARD = 3;

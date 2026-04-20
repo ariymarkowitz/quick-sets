@@ -1,7 +1,9 @@
 export type Theme = 'light' | 'dark';
+export type GameMode = 'chill' | 'speedy';
 
 const THEME_KEY = 'set-game-theme';
 const SCORES_KEY = 'set-game-scores';
+const MODE_KEY = 'set-game-mode';
 
 export function initTheme(): Theme {
   let theme: Theme = 'light';
@@ -33,6 +35,24 @@ export function toggleTheme(): Theme {
   const next: Theme = current === 'dark' ? 'light' : 'dark';
   setTheme(next);
   return next;
+}
+
+export function getMode(): GameMode {
+  try {
+    const stored = localStorage.getItem(MODE_KEY);
+    if (stored === 'chill' || stored === 'speedy') return stored;
+  } catch (_) {
+    // ignore
+  }
+  return 'chill';
+}
+
+export function setMode(mode: GameMode): void {
+  try {
+    localStorage.setItem(MODE_KEY, mode);
+  } catch (_) {
+    // ignore
+  }
 }
 
 export function getScores(): number[] {

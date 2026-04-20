@@ -26,6 +26,7 @@
   class:selected={entry.status === 'selected'}
   class:valid={entry.status === 'valid'}
   class:invalid={entry.status === 'invalid'}
+  class:hint={entry.status === 'hint'}
   role="button"
   tabindex="0"
   {onclick}
