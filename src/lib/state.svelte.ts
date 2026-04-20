@@ -1,6 +1,6 @@
 import { generateDeck, shuffle, isValidSet, hasSet, findSet, type Card } from './game.js';
 import { saveScore as persistScore, getScores, getMode, setMode } from './storage.js';
-import { INITIAL_BOARD, MIN_BOARD, DEAL_SETTLE_MS, TOAST_MS, MODE_TIMINGS } from './constants.js';
+import { INITIAL_BOARD, MIN_BOARD, DEAL_SETTLE_MS, TOAST_MS, MODE_TIMINGS, VICTORY_MESSAGES } from './constants.js';
 
 export type EntryStatus =
   | null
@@ -264,7 +264,7 @@ function endGame(): void {
   game.gameActive = false;
 
   const elapsedValue = game.elapsed;
-  const title = game.activeEntries.length === 0 && game.deck.length === 0 ? 'You finished!' : 'No more sets!';
+  const title = VICTORY_MESSAGES[Math.floor(Math.random() * VICTORY_MESSAGES.length)];
 
   if (game.hintsUsed) {
     game.scores = getScores();

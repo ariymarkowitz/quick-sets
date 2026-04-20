@@ -39,3 +39,13 @@ export const MODE_TIMINGS = {
 } as const;
 export const INITIAL_BOARD = 12;
 export const MIN_BOARD = 3;
+
+export const VICTORY_MESSAGES = [
+  "All sets found!",
+  "Mission accomplished!",
+  "Victory!",
+  "You did it!",
+  "No more sets!",
+  "Deck complete!",
+  "Congratulations!"
+]
