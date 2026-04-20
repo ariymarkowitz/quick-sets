@@ -74,6 +74,7 @@
 
   :global(#modal h3) {
     font-size: 0.78rem;
+    font: 60;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     color: var(--text-muted);

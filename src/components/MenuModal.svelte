@@ -112,15 +112,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 0.3rem;
   }
 
   .mode-icon {
     display: inline-block;
-    width: 1.1em;
-    height: 1.1em;
+    width: 1.3em;
+    height: 1.3em;
     background-color: currentColor;
     flex-shrink: 0;
+
+    transform: translateY(-1px);
   }
 
   .tortoise-icon {
@@ -168,8 +170,8 @@
   #menu-theme-toggle::before {
     content: '';
     display: block;
-    width: 18px;
-    height: 18px;
+    width: 1rem;
+    height: 1rem;
     background-color: var(--text);
     -webkit-mask: url('../icons/moon.svg') no-repeat center / contain;
     mask: url('../icons/moon.svg') no-repeat center / contain;

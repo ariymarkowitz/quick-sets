@@ -43,7 +43,7 @@
     height: 100%;
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 1rem;
     flex-shrink: 0;
   }
 
@@ -67,13 +67,13 @@
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 0.4rem;
   }
 
   .header-icon {
     display: inline-block;
-    width: 1.4em;
-    height: 1.4em;
+    width: 1.5em;
+    height: 1.5em;
     background-color: currentColor;
     transition: background-color 0.15s ease;
     -webkit-mask: url('../icons/mdi--cards.svg') no-repeat center / contain;
@@ -95,8 +95,8 @@
   #pause-btn::before {
     content: '';
     display: block;
-    width: 20px;
-    height: 20px;
+    width: 1rem;
+    height: 1rem;
     background-color: var(--text);
     transition: background-color 0.15s ease;
   }
@@ -120,7 +120,7 @@
     background: transparent;
     border: 1px dashed var(--border, #888);
     color: inherit;
-    font-size: 0.9rem;
+    font-size: 1rem;
     padding: 0.2rem 0.5rem;
     cursor: pointer;
     border-radius: 4px;

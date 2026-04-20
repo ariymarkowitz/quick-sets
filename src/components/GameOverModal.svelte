@@ -28,7 +28,7 @@
 <style>
   #final-time-display {
     font-size: 2.8rem;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--text);
     font-variant-numeric: tabular-nums;
     margin-bottom: 20px;
