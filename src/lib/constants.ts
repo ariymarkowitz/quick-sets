@@ -34,7 +34,7 @@ export const MODE_TIMINGS = {
   },
   chill: {
     dealDuration: 280, removeDuration: 240, stagger: 100, fastStagger: 20,
-    validFlash: 260, invalidFlash: 340, shakeDuration: 260,
+    validFlash: 360, invalidFlash: 340, shakeDuration: 260,
   },
 } as const;
 export const INITIAL_BOARD = 12;
