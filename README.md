@@ -18,5 +18,6 @@ The game ends when there are no sets among the remaining cards (deck + board com
 - Auto-reshuffle when no sets exist on the board
 - Top 5 leaderboard saved locally
 - Works well on mobile browsers
+- Can be installed as a Progressive Web App
 
 Made with the help of Claude.
