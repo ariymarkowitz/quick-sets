@@ -26,6 +26,10 @@
 </Modal>
 
 <style>
+  #modal-title {
+    margin-bottom: 12px;
+  }
+
   #final-time-display {
     font-size: 2.8rem;
     font-weight: 800;

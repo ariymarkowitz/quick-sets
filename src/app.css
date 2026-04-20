@@ -135,7 +135,6 @@ button:active {
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--accent);
-  margin-bottom: 20px;
 }
 
 #play-again-btn {

@@ -91,6 +91,10 @@
 
 <style>
 
+  #modal-title {
+    margin-bottom: 20px;
+  }
+
   .segmented {
     display: flex;
     width: 100%;
