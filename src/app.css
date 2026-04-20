@@ -1,7 +1,6 @@
 /* ─── CSS Variables ─────────────────────────────────────────────────────────── */
 
 :root {
-  --texture: url('texture.jpg');
   --bg: #f3f3f3;
   --surface: #ffffff;
   --surface-alt: #ffffff70;
@@ -57,29 +56,35 @@ body {
   height: 100dvh;
   overflow: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
-
 }
 
-body::before {
+body::before,
+body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: var(--texture);
-  background-size: 50% 50%;
-  background-repeat: repeat;
-  mix-blend-mode: overlay;
-  opacity: 0;
+  z-index: -1;
+  background-size: 350px 350px;
+  transition: opacity 0.3s ease;
   pointer-events: none;
-  z-index: 0;
 }
 
-body.light::before {
+body::before {
+  background-image: url('/texture-light.webp');
   opacity: 1;
-  transition: opacity 0.3s linear 0.3s;
+}
+
+body::after {
+  background-image: url('/texture-dark.webp');
+  opacity: 0;
 }
 
 body.dark::before {
-  opacity: 0.5;
+  opacity: 0;
+}
+
+body.dark::after {
+  opacity: 1;
 }
 
 /* ─── App & Layout ──────────────────────────────────────────────────────────── */
@@ -136,6 +141,7 @@ h1 {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--text);
+  transition: color 0.3s ease;
   min-width: 3ch;
 }
 
