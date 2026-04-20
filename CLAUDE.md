@@ -20,7 +20,7 @@ There is no test suite or linter configured.
 
 Prefer using reusable components to duplicated code. Think about modularity, simplicity, elegance, and readability.
 
-Use Svelte 5 runes instead of stores to manage reactive state.
+Use Svelte 5 runes instead of stores to manage reactive state. Use derived state and effects instead of cached values, functions, and updater functions whenever possible, especially when using nested reactive data structures.
 
 ## Architecture
 

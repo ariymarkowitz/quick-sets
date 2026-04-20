@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { game, newGame, closeMenu, setMode } from '../lib/state.svelte';
+  import { game, newGame, closeMenu } from '../lib/state.svelte';
   import { formatTime } from '../lib/game';
   import { getTheme, toggleTheme, type Theme } from '../lib/storage';
   import Modal from './Modal.svelte';
@@ -35,13 +35,13 @@
           type="button"
           class="segmented-btn"
           class:active={game.mode === 'casual'}
-          onclick={() => setMode('casual')}
+          onclick={() => (game.mode = 'casual')}
         >Casual</button>
         <button
           type="button"
           class="segmented-btn"
           class:active={game.mode === 'hardcore'}
-          onclick={() => setMode('hardcore')}
+          onclick={() => (game.mode = 'hardcore')}
         >Hardcore</button>
       </div>
     </div>

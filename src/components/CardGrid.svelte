@@ -13,7 +13,7 @@
       when cards exit — the slot holds its space while the card animates.
     -->
     <div class="card-slot">
-      {#if game.cardsVisible && entry.card !== null && entry.status !== 'placeholder' && entry.status !== 'removing'}
+      {#if game.cardsVisible && entry.card !== null && entry.status !== 'placeholder' && entry.status !== 'removing' && entry.status !== 'dealing'}
         {@const cardEntry = entry as typeof entry & { card: NonNullable<typeof entry.card> }}
         <div
           class="card-inner"

@@ -25,7 +25,7 @@ export const SHAPE_DATA: Record<ShapeName, { d: string; h: number }> = {
 
 export const SHAPE_SLOT_H = Math.max(...Object.values(SHAPE_DATA).map(s => s.h)) * SHAPE_SCALE * (1 + GAP_SCALE);
 
-export const DEAL_STAGGER_MS = 10;
+export const DEAL_STAGGER_MS = 100;
 export const DEAL_DURATION_MS = 150;
 export const VALID_FLASH_MS = 120;
 export const INVALID_FLASH_MS = 180;
