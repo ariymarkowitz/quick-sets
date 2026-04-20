@@ -75,7 +75,7 @@ body::before {
 
 body.light::before {
   opacity: 1;
-  transition: opacity 0.1s linear 0.5s;
+  transition: opacity 0.3s linear 0.3s;
 }
 
 body.dark::before {
@@ -369,7 +369,7 @@ body.dark #theme-toggle::before {
   font-size: 1.75rem;
   font-weight: 800;
   color: var(--accent);
-  margin-bottom: 6px;
+  margin-bottom: 12px;
 }
 
 #final-time-display {

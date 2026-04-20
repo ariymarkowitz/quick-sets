@@ -28,8 +28,7 @@
   {#if view === 'main'}
     <h2 id="modal-title">Quick Sets</h2>
 
-    <div class="menu-section">
-      <h3>Mode</h3>
+    <div class="menu-row">
       <div class="segmented" role="group" aria-label="Game mode">
         <button
           type="button"
@@ -44,11 +43,6 @@
           onclick={() => (game.mode = 'speedy')}
         >Speedy</button>
       </div>
-    </div>
-
-    <div class="menu-row">
-      <button class="menu-btn" onclick={() => (view = 'help')}>How to Play</button>
-      <button class="menu-btn" onclick={() => (view = 'leaderboard')}>Leaderboard</button>
       <button
         id="menu-theme-toggle"
         class="menu-btn icon-btn"
@@ -56,6 +50,11 @@
         title={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
         onclick={onThemeToggle}
       ></button>
+    </div>
+
+    <div class="menu-row">
+      <button class="menu-btn" onclick={() => (view = 'help')}>How to Play</button>
+      <button class="menu-btn" onclick={() => (view = 'leaderboard')}>Leaderboard</button>
     </div>
 
     <button id="play-again-btn" onclick={newGame}>
@@ -93,13 +92,6 @@
 </Modal>
 
 <style>
-  .menu-section {
-    margin-bottom: 18px;
-  }
-
-  .menu-section h3 {
-    margin-bottom: 8px;
-  }
 
   .segmented {
     display: flex;
@@ -133,6 +125,7 @@
   .menu-row {
     display: flex;
     gap: 8px;
+    margin-top: 18px;
     margin-bottom: 18px;
   }
 
