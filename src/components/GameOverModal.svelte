@@ -28,6 +28,14 @@
 </Modal>
 
 <style>
+  #final-time-display {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 20px;
+  }
+
   .disqualified-note {
     font-size: 0.85rem;
     color: var(--text-muted);

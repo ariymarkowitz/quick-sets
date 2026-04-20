@@ -30,6 +30,24 @@
 </main>
 
 <style>
+  #card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 8px;
+    padding: 0 10px 10px 10px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  @media (min-width: 520px) {
+    #card-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 0 14px 14px 14px;
+    }
+  }
+
   .card-slot {
     display: flex;
     flex-direction: column;

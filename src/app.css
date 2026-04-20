@@ -87,7 +87,7 @@ body.dark::after {
   opacity: 1;
 }
 
-/* ─── App & Layout ──────────────────────────────────────────────────────────── */
+/* ─── Layout ────────────────────────────────────────────────────────────────── */
 
 #game {
   position: relative;
@@ -101,72 +101,7 @@ body.dark::after {
   overflow: hidden;
 }
 
-/* ─── Header ────────────────────────────────────────────────────────────────── */
-
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  gap: 8px;
-}
-
-h1 {
-  font-size: 1.35rem;
-  font-weight: 800;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--accent);
-  flex-shrink: 0;
-}
-
-.header-group {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  flex-shrink: 0;
-}
-
-.header-group button {
-  height: 100%;
-
-}
-
-#timer {
-  font-size: 1rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-  transition: color 0.3s ease;
-  min-width: 3ch;
-}
-
-#deck-count {
-  font-size: 1rem;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-#deck-count {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.header-icon {
-  display: inline-block;
-  width: 1.4em;
-  height: 1.4em;
-  background-color: currentColor;
-  -webkit-mask: url('./icons/mdi--cards.svg') no-repeat center / contain;
-  mask: url('./icons/mdi--cards.svg') no-repeat center / contain;
-}
-
-/* ─── Buttons ───────────────────────────────────────────────────────────────── */
+/* ─── Button Base ───────────────────────────────────────────────────────────── */
 
 button {
   background: var(--surface-alt);
@@ -187,222 +122,7 @@ button:active {
   transition: opacity 0s;
 }
 
-#theme-toggle {
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-#theme-toggle::before {
-  content: '';
-  display: block;
-  width: 18px;
-  height: 18px;
-  background-color: var(--text);
-  -webkit-mask: url('./icons/moon.svg') no-repeat center / contain;
-  mask: url('./icons/moon.svg') no-repeat center / contain;
-}
-
-body.dark #theme-toggle::before {
-  -webkit-mask-image: url('./icons/sun.svg');
-  mask-image: url('./icons/sun.svg');
-}
-
-#hint-btn, #pause-btn {
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-#hint-btn::before, #pause-btn::before {
-  content: '';
-  display: block;
-  width: 20px;
-  height: 20px;
-  background-color: var(--text);
-}
-
-#hint-btn::before {
-  -webkit-mask: url('./icons/mdi--lightbulb-on.svg') no-repeat center / contain;
-  mask: url('./icons/mdi--lightbulb-on.svg') no-repeat center / contain;
-}
-
-#pause-btn::before {
-  -webkit-mask: url('./icons/mdi--pause.svg') no-repeat center / contain;
-  mask: url('./icons/mdi--pause.svg') no-repeat center / contain;
-}
-
-#pause-btn[aria-label="Resume"]::before {
-  -webkit-mask-image: url('./icons/mdi--play.svg');
-  mask-image: url('./icons/mdi--play.svg');
-}
-
-/* ─── Message Toast ─────────────────────────────────────────────────────────── */
-
-#message-toast {
-  text-align: center;
-  padding: 7px 16px;
-  min-height: 34px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  transition: opacity 0.3s ease;
-}
-
-#message-toast.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* ─── Card Grid ─────────────────────────────────────────────────────────────── */
-
-#card-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: 1fr;
-  gap: 8px;
-  padding: 0 10px 10px 10px;
-  flex: 1;
-  min-height: 0;
-}
-
-@media (min-width: 520px) {
-  #card-grid {
-    grid-template-columns: repeat(4, 1fr);
-    grid-auto-rows: 1fr;
-    gap: 12px;
-    padding: 0 14px 14px 14px;
-  }
-}
-
-/* ─── Cards ─────────────────────────────────────────────────────────────────── */
-
-.card {
-  background: var(--card-bg);
-  border: 2.5px solid var(--card-border);
-  border-radius: 14px;
-  cursor: pointer;
-  touch-action: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 7%;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 2px 8px var(--shadow);
-  transition-property: opacity, transform, box-shadow, border-color, background-color;
-  transition-duration: 0.12s, 0.12s, 0.15s, 0.2s, 0.3s;
-  transition-timing-function: ease, ease, ease, ease, ease;
-  position: relative;
-  overflow: hidden;
-  will-change: transform;
-  container-type: size;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 14px var(--shadow-hover);
-}
-
-.card.selected {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow), 0 5px 14px var(--shadow-hover);
-  transform: translateY(-4px);
-}
-
-.card.valid {
-  border-color: var(--valid) !important;
-  box-shadow: 0 0 0 3px var(--valid-glow), 0 5px 16px var(--shadow-hover) !important;
-  transform: translateY(-4px);
-}
-
-.card.valid.chill {
-  animation: pulse-valid 0.3s ease forwards; 
-}
-
-.card.invalid {
-  border-color: var(--invalid) !important;
-  box-shadow: 0 0 0 3px var(--invalid-glow) !important;
-  animation: shake var(--shake-duration, 0.15s) ease forwards;
-}
-
-.card.hint {
-  border-color: var(--hint-highlight) !important;
-  box-shadow: 0 0 0 3px var(--hint-glow), 0 5px 14px var(--shadow-hover) !important;
-  transform: translateY(-2px);
-}
-
-
-.card-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  overflow: visible;
-}
-
-/* Rotate symbols sideways when the card is landscape */
-@container (aspect-ratio > 1) {
-  .card-svg {
-    position: absolute;
-    width: 100cqh;
-    height: 100cqw;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(90deg);
-  }
-}
-
-/* ─── Keyframe Animations ───────────────────────────────────────────────────── */
-
-@keyframes pulse-valid {
-  0%   { scale: 1; }
-  50%  { scale: 1.04; }
-  100% { scale: 1; }
-}
-
-@keyframes shake {
-  0%, 100% { translate: 0 0; }
-  25%      { translate: -5px 0; }
-  75%      { translate: 5px 0; }
-}
-
-/* ─── Modal / Overlay ───────────────────────────────────────────────────────── */
-
-#modal-positioner {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: 100;
-  pointer-events: none;
-}
-
-#modal-positioner > #modal {
-  pointer-events: auto;
-}
-
-#modal {
-  background: var(--surface);
-  border-radius: 20px;
-  padding: 30px 28px;
-  max-width: 360px;
-  width: 100%;
-  text-align: center;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--border);
-  transition: background-color 0.3s ease, border 0.3s ease;;
-  will-change: transform;
-}
+/* ─── Shared Modal Content ──────────────────────────────────────────────────── */
 
 #modal-title {
   font-size: 1.75rem;
@@ -411,20 +131,26 @@ body.dark #theme-toggle::before {
   margin-bottom: 24px;
 }
 
-#final-time-display {
-  font-size: 2.8rem;
+#play-again-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
   font-weight: 700;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-  margin-bottom: 20px;
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
 }
 
-#modal h3 {
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--text-muted);
-  margin-bottom: 10px;
+#play-again-btn:hover {
+  background: var(--accent);
+  opacity: 0.88;
+}
+
+#play-again-btn:active {
+  transform: scale(0.97);
 }
 
 #leaderboard-list {
@@ -453,28 +179,6 @@ body.dark #theme-toggle::before {
   border: 1.5px solid var(--accent);
   color: var(--accent);
   font-weight: 700;
-}
-
-#play-again-btn {
-  width: 100%;
-  padding: 12px;
-  font-size: 1rem;
-  font-weight: 700;
-  background: var(--accent);
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
-}
-
-#play-again-btn:hover {
-  background: var(--accent);
-  opacity: 0.88;
-}
-
-#play-again-btn:active {
-  transform: scale(0.97);
 }
 
 /* ─── Shape Fill & Stroke ────────────────────────────────────────────────────

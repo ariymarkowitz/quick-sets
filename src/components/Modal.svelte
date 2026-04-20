@@ -40,6 +40,47 @@
 {/if}
 
 <style>
+  #modal-positioner {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  #modal-positioner > #modal {
+    pointer-events: auto;
+  }
+
+  #modal {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 30px 28px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    transition: background-color 0.3s ease, border 0.3s ease;
+    will-change: transform;
+    animation: modalIn 500ms cubic-bezier(0.33, 1, 0.68, 1) both;
+  }
+
+  #modal.closing {
+    animation: modalOut 200ms forwards;
+  }
+
+  :global(#modal h3) {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
   @keyframes modalIn {
     from { opacity: 0; translate: 0 -8px; scale: 0.95; }
     to   { opacity: 1; translate: 0 0;    scale: 1; }
@@ -48,13 +89,5 @@
   @keyframes modalOut {
     from { opacity: 1; scale: 1; }
     to   { opacity: 0; scale: 0.9; }
-  }
-
-  #modal {
-    animation: modalIn 500ms cubic-bezier(0.33, 1, 0.68, 1) both;
-  }
-
-  #modal.closing {
-    animation: modalOut 200ms forwards;
   }
 </style>
