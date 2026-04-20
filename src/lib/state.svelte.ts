@@ -144,9 +144,9 @@ function validateSelection(): void {
 function removeAndReplenish(idsToRemove: number[]): void {
   // Mark cards as removing → the {#if} in CardGrid toggles to false → out: transition fires.
   // The grid slot div persists throughout, so no layout shift occurs.
-  for (const e of game.board) {
-    if (idsToRemove.includes(e.id)) e.status = 'removing';
-  }
+  const toRemove = game.board.filter(e => idsToRemove.includes(e.id));
+  staggerRemoveDelays(toRemove);
+  for (const e of toRemove) e.status = 'removing';
 
   setTimeout(() => {
     const replacingEntries: BoardEntry[] = [];
