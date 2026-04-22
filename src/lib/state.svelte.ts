@@ -60,6 +60,7 @@ const makeId = (): number => ++nextId;
 let gameStartTime = 0;
 let pauseStart = 0;
 let selectedIds: number[] = [];
+let visibilityPaused = false;
 
 $effect.root(() => {
   try {
@@ -84,6 +85,26 @@ $effect.root(() => {
   });
 
   $effect(() => { setMode(game.mode); });
+
+  function onVisibilityChange() {
+    if (!game.gameActive || game.menuOpen) return;
+    if (document.hidden) {
+      if (!game.paused) {
+        pauseStart = Date.now();
+        game.paused = true;
+        visibilityPaused = true;
+      }
+    } else {
+      if (visibilityPaused && game.paused) {
+        gameStartTime += Date.now() - pauseStart;
+        game.paused = false;
+        visibilityPaused = false;
+      }
+    }
+  }
+
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  return () => document.removeEventListener('visibilitychange', onVisibilityChange);
 });
 
 function setStatusFor(ids: number[], status: EntryStatus, from?: EntryStatus): void {
@@ -308,6 +329,7 @@ function performNewGameSetup(): void {
   game.paused = false;
   game.hintsUsed = false;
   game.hintIds = [];
+  visibilityPaused = false;
 
   gameStartTime = Date.now();
 
@@ -335,6 +357,7 @@ export function openMenu(): void {
     pauseStart = Date.now();
     game.paused = true;
   }
+  visibilityPaused = false;
   hideCardsThenShowModal(() => { game.menuOpen = true; });
 }
 
