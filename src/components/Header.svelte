@@ -17,7 +17,7 @@
   <div class="toast-wrapper"><Toast /></div>
   <div class="header-group" class:hidden={!game.gameActive}>
       {#if isDev}
-        <button class="dev-btn" title="Skip to end" onclick={devSkipToEnd}>⏭</button>
+        <button id="skip-btn" title="Skip to end" onclick={devSkipToEnd}></button>
       {/if}
       <button id="hint-btn" aria-label="Hint" title="Hint (disables leaderboard)" onclick={useHint}></button>
       <button id="pause-btn" aria-label={game.menuOpen ? 'Resume' : 'Pause'} title={game.menuOpen ? 'Resume' : 'Pause'} onclick={game.menuOpen ? closeMenu : openMenu}></button>
@@ -58,7 +58,22 @@
   }
 
   .header-group button {
-    height: 100%;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  .header-group button::before {
+    content: '';
+    display: block;
+    width: 1rem;
+    height: 1rem;
+    background-color: var(--text);
+    transition: background-color 0.15s ease;
   }
 
   #timer {
@@ -90,27 +105,6 @@
     mask: url('../icons/mdi--cards.svg') no-repeat center / contain;
   }
 
-  #hint-btn,
-  #pause-btn {
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-  }
-
-  #hint-btn::before,
-  #pause-btn::before {
-    content: '';
-    display: block;
-    width: 1rem;
-    height: 1rem;
-    background-color: var(--text);
-    transition: background-color 0.15s ease;
-  }
-
   #hint-btn::before {
     -webkit-mask: url('../icons/mdi--lightbulb-on.svg') no-repeat center / contain;
     mask: url('../icons/mdi--lightbulb-on.svg') no-repeat center / contain;
@@ -126,15 +120,18 @@
     mask-image: url('../icons/mdi--play.svg');
   }
 
-  .dev-btn {
+  #skip-btn {
     background: transparent;
     border: 1px dashed var(--border, #888);
     color: inherit;
-    font-size: 1rem;
-    padding: 0.2rem 0.5rem;
-    cursor: pointer;
-    border-radius: 4px;
   }
 
-  .dev-btn:hover { opacity: 0.7; }
+  #skip-btn::before {
+    content: '⏭';
+    width: auto;
+    height: auto;
+    background: none;
+  }
+
+  #skip-btn:hover { opacity: 0.7; }
 </style>
