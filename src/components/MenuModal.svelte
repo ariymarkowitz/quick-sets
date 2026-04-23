@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { game, newGame, closeMenu, onModalClosed } from '../lib/state.svelte';
   import { formatTime } from '../lib/game';
   import { getTheme, toggleTheme, type Theme } from '../lib/storage';
@@ -8,9 +7,6 @@
   type View = 'main' | 'help' | 'leaderboard';
   let view: View = $state('main');
   let theme: Theme = $state(getTheme());
-  let mounted = $state(false);
-
-  onMount(() => { mounted = true; });
 
   function onThemeToggle() {
     theme = toggleTheme();
@@ -22,7 +18,7 @@
   }
 </script>
 
-<Modal open={game.modalVisible && game.menuOpen && mounted} onclose={onClose}>
+<Modal open={game.modalVisible && game.menuOpen} onclose={onClose}>
   {#if view === 'main'}
     <h2 id="modal-title">Quick Sets</h2>
 

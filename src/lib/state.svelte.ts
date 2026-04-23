@@ -75,14 +75,9 @@ class GameState {
   scores: number[] = $state([]);
   toast: string = $state('');
 
-  // Modal close handshake: a non-derivable intent flag. Actions that want to
-  // dismiss the modal (newGame / closeMenu) set this true via `closeModal()`;
-  // when the Modal finishes its exit animation and fires onclose, we clear it.
+  // Handshake flags. Actions that want to dismiss the modal set this true via
+  // `closeModal()`; when the Modal exits and fires onclose, we clear it.
   modalClosing: boolean = $state(false);
-
-  // Cards-exiting state: when `cardsShown` flips false while cards are still
-  // mounted, an effect sets this true so the grid entries animate out. After
-  // the staggered exit duration, the effect clears it, which unmounts them.
   cardsExiting: boolean = $state(false);
 
   // --- Derivations ---
@@ -100,7 +95,9 @@ class GameState {
   paused = $derived(this.phase.kind === 'pausedMenu' || this.phase.kind === 'pausedTab');
   menuOpen = $derived(this.phase.kind === 'intro' || this.phase.kind === 'pausedMenu');
   gameOver = $derived<GameOverInfo | null>(this.phase.kind === 'over' ? this.phase.info : null);
-  modalOpen = $derived(this.menuOpen || this.gameOver !== null);
+  modalOpen = $derived(
+    this.phase.kind === 'intro' || this.phase.kind === 'pausedMenu' || this.phase.kind === 'over'
+  );
   cardsShown = $derived(this.phase.kind === 'playing' || this.phase.kind === 'pausedTab');
   cardsMounted = $derived(this.cardsShown || this.cardsExiting);
   animating = $derived(this.resolution !== null);
@@ -144,11 +141,11 @@ let nextId = 0;
 const makeId = (): number => ++nextId;
 
 function totalRemoveDuration(n: number, stagger: number): number {
-  return Math.max(0, (n - 1)) * stagger + game.animSettings.removeDuration;
+  return Math.max(0, n - 1) * stagger + game.animSettings.removeDuration;
 }
 
 function totalDealDuration(n: number): number {
-  return Math.max(0, (n - 1)) * game.animSettings.stagger + game.animSettings.dealDuration;
+  return Math.max(0, n - 1) * game.animSettings.stagger + game.animSettings.dealDuration;
 }
 
 function ensureBoardHasSet(cards: Card[], boardSize: number): void {
@@ -159,8 +156,8 @@ function ensureBoardHasSet(cards: Card[], boardSize: number): void {
 }
 
 function findBoardSet(): number[] | null {
-  const entries = game.board.filter(e => e.card !== null);
-  const indices = findSet(entries.map(e => e.card as Card));
+  const entries = game.activeEntries;
+  const indices = findSet(entries.map(e => e.card!));
   if (!indices) return null;
   return indices.map(i => entries[i]!.id);
 }
@@ -181,12 +178,10 @@ function checkBoard(): void {
   }
 
   if (active.length < MIN_BOARD && game.deck.length > 0) {
-    // Top up by filling empty slots (card === null) plus adding fresh entries.
     const need = MIN_BOARD - active.length;
     const dealingIds: number[] = [];
     let dealIdx = 0;
 
-    // Fill existing empty slots first.
     for (const e of game.board) {
       if (e.card !== null || game.deck.length === 0 || dealingIds.length >= need) continue;
       e.card = game.deck.pop()!;
@@ -204,7 +199,7 @@ function checkBoard(): void {
     return;
   }
 
-  const boardCards = active.map(e => e.card).filter((c): c is Card => c !== null);
+  const boardCards = active.map(e => e.card!);
   if (hasSet(boardCards)) return;
 
   if (!hasSet([...boardCards, ...game.deck])) {
@@ -217,15 +212,11 @@ function checkBoard(): void {
 
 function reshuffleAndDeal(): void {
   game.toast = 'No sets here — reshuffling…';
-  const combined: Card[] = [
-    ...game.activeEntries.map(e => e.card).filter((c): c is Card => c !== null),
-    ...game.deck,
-  ];
+  const combined: Card[] = [...game.activeEntries.map(e => e.card!), ...game.deck];
   ensureBoardHasSet(combined, BOARD_SIZE);
   game.deck = combined;
   game.selectedIds = [];
 
-  // Remove every current entry with its normal stagger, then re-deal fresh.
   const ids = game.board.map(e => e.id);
   if (ids.length === 0) {
     // Nothing to remove — go straight to dealing.
@@ -235,15 +226,20 @@ function reshuffleAndDeal(): void {
   game.resolution = { stage: 'removing', ids, stagger: game.animSettings.stagger, next: 'reshuffle' };
 }
 
-// Deals a fresh INITIAL_BOARD-sized board from the current deck.
-function dealFreshBoard(): void {
+// Pops up to `count` cards off the deck into fresh entries starting at dealIndex 0.
+function dealFresh(count: number): number[] {
   game.board = [];
   const ids: number[] = [];
-  for (let i = 0; i < BOARD_SIZE && game.deck.length > 0; i++) {
-    const entry = makeEntry(game.deck.pop()!, i);
-    game.board.push(entry);
-    ids.push(entry.id);
+  for (let i = 0; i < count && game.deck.length > 0; i++) {
+    const e = makeEntry(game.deck.pop()!, i);
+    game.board.push(e);
+    ids.push(e.id);
   }
+  return ids;
+}
+
+function dealFreshBoard(): void {
+  const ids = dealFresh(BOARD_SIZE);
   if (ids.length > 0) {
     game.resolution = { stage: 'dealing', ids };
   }
@@ -252,11 +248,7 @@ function dealFreshBoard(): void {
 function buildInitialBoard(): void {
   game.deck = generateDeck();
   ensureBoardHasSet(game.deck, BOARD_SIZE);
-  game.board = [];
-  for (let i = 0; i < BOARD_SIZE; i++) {
-    const entry = makeEntry(game.deck.pop()!, i);
-    game.board.push(entry);
-  }
+  dealFresh(BOARD_SIZE);
 }
 
 function endGame(): void {
@@ -293,6 +285,8 @@ $effect.root(() => {
   game.scores = getScores();
   game.mode = getMode();
 
+  $inspect(game.cardsExiting);
+
   // TimerTick — run while playing; sample Date.now on interval.
   $effect(() => {
     if (game.phase.kind !== 'playing') return;
@@ -306,7 +300,7 @@ $effect.root(() => {
   // Start captured on mount; duration applied on cleanup. No manual
   // gameStartTime adjustments elsewhere.
   $effect(() => {
-    if (!game.paused) return () => {};
+    if (!game.paused) return;
     const start = Date.now();
     return () => {
       game.pauseAccumulated += Date.now() - start;
@@ -318,7 +312,7 @@ $effect.root(() => {
   // effect so the prior timeout is cleared via cleanup.
   $effect(() => {
     const r = game.resolution;
-    if (!r) return () => {};
+    if (!r) return;
 
     let d: number;
     if (r.stage === 'flash') {
@@ -350,7 +344,6 @@ $effect.root(() => {
           // Drop the board and re-deal from the shuffled combined deck.
           dealFreshBoard();
         } else {
-          // Replace each removed card with a fresh one from the deck.
           const dealingIds: number[] = [];
           let dealIdx = 0;
           for (const e of game.board) {
@@ -377,7 +370,7 @@ $effect.root(() => {
 
   // ToastAutoDismiss
   $effect(() => {
-    if (!game.toast) return () => {};
+    if (!game.toast) return;
     const id = setTimeout(() => { game.toast = ''; }, TOAST_MS);
     return () => clearTimeout(id);
   });
@@ -395,16 +388,13 @@ $effect.root(() => {
     return () => document.removeEventListener('visibilitychange', onChange);
   });
 
-  // ModePersist — external storage write; cleanup is a no-op for contract.
-  $effect(() => {
-    setMode(game.mode);
-    return () => {};
-  });
+  // ModePersist — external storage write.
+  $effect(() => setMode(game.mode));
 
   // CardsExiting — when `cardsShown` flips false while cards are mounted,
   // run the staggered outro animation, then unmount by clearing the flag.
-  $effect(() => {
-    if (game.cardsShown) return () => {};
+  $effect.pre(() => {
+    if (game.cardsShown) return;
     const { count, duration } = untrack(() => {
       const count = game.activeEntries.length;
       return {
@@ -412,7 +402,7 @@ $effect.root(() => {
         duration: totalRemoveDuration(count, game.animSettings.fastStagger),
       };
     });
-    if (count === 0) return () => {};
+    if (count === 0) return;
     game.cardsExiting = true;
     const id = setTimeout(() => { game.cardsExiting = false; }, duration);
     return () => {
@@ -421,7 +411,6 @@ $effect.root(() => {
     };
   });
 
-  return () => {};
 });
 
 // --- Actions ---
@@ -445,13 +434,8 @@ export function handleCardClick(id: number): void {
   game.selectedIds = nextSelected;
 
   if (nextSelected.length === 3) {
-    const entries = nextSelected.map(sid => game.board.find(e => e.id === sid));
-    if (entries.some(e => !e || e.card === null)) {
-      game.selectedIds = [];
-      return;
-    }
-    const [a, b, c] = entries as [BoardEntry, BoardEntry, BoardEntry];
-    const valid = isValidSet(a.card as Card, b.card as Card, c.card as Card);
+    const [a, b, c] = nextSelected.map(sid => game.board.find(e => e.id === sid)!) as [BoardEntry, BoardEntry, BoardEntry];
+    const valid = isValidSet(a.card!, b.card!, c.card!);
     game.resolution = { stage: 'flash', ids: nextSelected, valid };
   }
 }
@@ -474,6 +458,16 @@ export function useHint(): void {
   }
 }
 
+// Re-index active entries and start the staggered deal-in animation.
+// Used by newGame and closeMenu after their phase change + handshake clear.
+function startDealIn(): void {
+  const active = game.activeEntries;
+  active.forEach((e, i) => { e.dealIndex = i; });
+  if (active.length > 0) {
+    game.resolution = { stage: 'dealing', ids: active.map(e => e.id) };
+  }
+}
+
 export async function newGame(): Promise<void> {
   await closeModal();
   // Reset root signals.
@@ -492,7 +486,7 @@ export async function newGame(): Promise<void> {
   // Phase change closes the modal intent; clear the handshake flag and
   // trigger the initial staggered deal-in.
   game.modalClosing = false;
-  game.resolution = { stage: 'dealing', ids: game.board.map(e => e.id) };
+  startDealIn();
 }
 
 export function openMenu(): void {
@@ -504,15 +498,10 @@ export function openMenu(): void {
 export async function closeMenu(): Promise<void> {
   if (game.phase.kind !== 'pausedMenu') return;
   await closeModal();
-  // Re-assign dealIndex so the staggered deal-in plays on resume.
-  const active = game.board.filter(e => e.card !== null);
-  active.forEach((e, i) => { e.dealIndex = i; });
   game.phase = { kind: 'playing' };
   // Phase change closes the modal intent; clear the handshake flag.
   game.modalClosing = false;
-  if (active.length > 0) {
-    game.resolution = { stage: 'dealing', ids: active.map(e => e.id) };
-  }
+  startDealIn();
 }
 
 export function devSkipToEnd(): void {
