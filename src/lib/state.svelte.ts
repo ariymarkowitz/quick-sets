@@ -71,10 +71,7 @@ class GameState {
   scores: number[] = $state([]);
   toast: string = $state('');
 
-  // Handshake flags. Actions that want to dismiss the modal set this true via
-  // `closeModal()`; when the Modal exits and fires onclose, we clear it.
-  modalClosing: boolean = $state(false);
-  cardsExiting: boolean = $state(false);
+  viewTransition: 'cardsExiting' | 'modalExiting' | null = $state(null);
 
   // --- Derivations ---
   animSettings = $derived(MODE_TIMINGS[this.mode]);
@@ -95,13 +92,11 @@ class GameState {
     this.phase.kind === 'intro' || this.phase.kind === 'pausedMenu' || this.phase.kind === 'over'
   );
   cardsShown = $derived(this.phase.kind === 'playing' || this.phase.kind === 'pausedTab');
-  cardsMounted = $derived(this.cardsShown || this.cardsExiting);
+  cardsMounted = $derived(this.cardsShown || this.viewTransition === 'cardsExiting');
   animating = $derived(this.resolution !== null);
   activeEntries = $derived(this.board.filter(e => e.card !== null));
 
-  // Modal's `open` prop: only truly open once cards have finished exiting and
-  // the close handshake isn't in flight. Keeps "cards out, THEN modal in".
-  modalVisible = $derived(this.modalOpen && !this.cardsMounted && !this.modalClosing);
+  modalVisible = $derived(this.modalOpen && this.viewTransition === null);
 
   // Per-entry view. Replaces the mutated `entry.status` / delays.
   cardStatus(entry: BoardEntry): EntryView {
@@ -111,7 +106,7 @@ class GameState {
 
     const rId = r?.ids.indexOf(entry.id) ?? -1;
 
-    if (this.cardsExiting) {
+    if (this.viewTransition === 'cardsExiting') {
       const idx = this.activeEntries.findIndex(e => e.id === entry.id);
       const removeDelay = Math.max(0, idx * this.animSettings.fastStagger);
       transition = { type: 'removing', delay: removeDelay };
@@ -229,14 +224,11 @@ function endGame(): void {
 }
 
 // --- Scope C: modal close handshake ---
-// `modalClosing` stays true across the Modal's exit animation and only flips
-// back to false once the action has also changed phase — otherwise
-// `modalVisible` could briefly recompute to true and re-open the Modal.
 let closeResolver: (() => void) | null = null;
 
 function closeModal(): Promise<void> {
   if (!game.modalOpen) return Promise.resolve();
-  game.modalClosing = true;
+  game.viewTransition = 'modalExiting';
   return new Promise(res => { closeResolver = res; });
 }
 
@@ -251,8 +243,6 @@ export function onModalClosed(): void {
 $effect.root(() => {
   game.scores = getScores();
   game.mode = getMode();
-
-  $inspect(game.cardsExiting);
 
   // TimerTick — run while playing; sample Date.now on interval.
   $effect(() => {
@@ -345,6 +335,14 @@ $effect.root(() => {
 
   $effect(() => setMode(game.mode));
 
+  // ModalExiting auto-clear — once modalOpen goes false (phase change resolved),
+  // clear the modalExiting transition so modalVisible can recompute cleanly.
+  $effect.pre(() => {
+    if (!game.modalOpen && game.viewTransition === 'modalExiting') {
+      game.viewTransition = null;
+    }
+  });
+
   // CardsExiting — when `cardsShown` flips false while cards are mounted,
   // run the staggered outro animation, then unmount by clearing the flag.
   $effect.pre(() => {
@@ -357,11 +355,11 @@ $effect.root(() => {
       };
     });
     if (count === 0) return;
-    game.cardsExiting = true;
-    const id = setTimeout(() => { game.cardsExiting = false; }, duration);
+    game.viewTransition = 'cardsExiting';
+    const id = setTimeout(() => { game.viewTransition = null; }, duration);
     return () => {
       clearTimeout(id);
-      game.cardsExiting = false;
+      game.viewTransition = null;
     };
   });
 
@@ -431,7 +429,6 @@ export async function newGame(): Promise<void> {
   game.gameStartTime = Date.now();
   game.phase = { kind: 'playing' };
 
-  game.modalClosing = false;
   // PausePeriod effect cleanup fires after this tick, adding the old pause
   // duration to pauseAccumulated. Reset it once effects have flushed.
   await tick();
@@ -445,11 +442,9 @@ export function openMenu(): void {
 }
 
 export async function closeMenu(): Promise<void> {
-  if (game.phase.kind !== 'pausedMenu' || game.cardsExiting) return;
+  if (game.phase.kind !== 'pausedMenu' || game.viewTransition !== null) return;
   await closeModal();
   game.phase = { kind: 'playing' };
-  // Phase change closes the modal intent; clear the handshake flag.
-  game.modalClosing = false;
   game.resolution = { stage: 'dealing', ids: game.activeEntries.map(e => e.id) };
 }
 
