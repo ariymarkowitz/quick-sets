@@ -361,8 +361,7 @@ export function openMenu(): void {
 }
 
 export function closeMenu(): void {
-  if (!game.menuOpen) return;
-  if (!game.gameActive) return;
+  if (!game.menuOpen || !game.gameActive) return;
   hideModalThenRun(() => {
     game.menuOpen = false;
     if (game.paused) {

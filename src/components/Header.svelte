@@ -15,14 +15,12 @@
     </span>
   </div>
   <div class="toast-wrapper"><Toast /></div>
-  <div class="header-group">
-    {#if isDev}
-      <button class="dev-btn" title="Skip to end" onclick={devSkipToEnd}>⏭</button>
-    {/if}
-    {#if game.gameActive}
+  <div class="header-group" class:hidden={!game.gameActive}>
+      {#if isDev}
+        <button class="dev-btn" title="Skip to end" onclick={devSkipToEnd}>⏭</button>
+      {/if}
       <button id="hint-btn" aria-label="Hint" title="Hint (disables leaderboard)" onclick={useHint}></button>
       <button id="pause-btn" aria-label={game.menuOpen ? 'Resume' : 'Pause'} title={game.menuOpen ? 'Resume' : 'Pause'} onclick={game.menuOpen ? closeMenu : openMenu}></button>
-    {/if}
   </div>
 </header>
 
@@ -51,6 +49,12 @@
     align-items: center;
     gap: 1rem;
     flex-shrink: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .header-group.hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 
   .header-group button {
