@@ -494,7 +494,7 @@ export function openMenu(): void {
 }
 
 export async function closeMenu(): Promise<void> {
-  if (game.phase.kind !== 'pausedMenu') return;
+  if (game.phase.kind !== 'pausedMenu' || game.cardsExiting) return;
   await closeModal();
   game.phase = { kind: 'playing' };
   // Phase change closes the modal intent; clear the handshake flag.
