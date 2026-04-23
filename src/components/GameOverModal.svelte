@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { game, newGame, runPendingAction } from '../lib/state.svelte';
+  import { game, newGame, onModalClosed } from '../lib/state.svelte';
   import { formatTime } from '../lib/game';
   import Modal from './Modal.svelte';
 
   function onClose() {
-    runPendingAction();
+    onModalClosed();
   }
 </script>
 

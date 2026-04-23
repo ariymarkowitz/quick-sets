@@ -6,27 +6,33 @@
 </script>
 
 <main id="card-grid">
-  {#each game.board as entry (entry.id)}
-    <!--
-      .card-slot is a persistent grid cell that never transitions out.
-      The inner {#if} controls whether the card content is shown.
-      'dealing' and 'removing' keep the card mounted so CSS animations run.
-    -->
-    <div class="card-slot">
-      {#if game.cardsVisible && entry.card !== null && entry.status !== 'placeholder'}
-        {@const cardEntry = entry as typeof entry & { card: NonNullable<typeof entry.card> }}
-        <div
-          class="card-inner"
-          class:dealing={entry.status === 'dealing'}
-          class:removing={entry.status === 'removing'}
-          class:chill={isChill}
-          style="--deal-delay:{entry.dealDelay}ms; --remove-delay:{entry.removeDelay}ms"
-        >
-          <Card entry={cardEntry} onclick={() => handleCardClick(entry.id)} />
-        </div>
-      {/if}
-    </div>
-  {/each}
+  {#if game.cardsMounted}
+    {#each game.board as entry (entry.id)}
+      <!--
+        .card-slot is a persistent grid cell that never transitions out.
+        The inner {#if} controls whether the card content is shown.
+        'dealing' and 'removing' keep the card mounted so CSS animations run.
+      -->
+      <div class="card-slot">
+        {#if entry.card !== null}
+          {@const v = game.view(entry)}
+          <div
+            class="card-inner"
+            class:dealing={v.status === 'dealing'}
+            class:removing={v.status === 'removing'}
+            class:chill={isChill}
+            style="--deal-delay:{v.dealDelay}ms; --remove-delay:{v.removeDelay}ms"
+          >
+            <Card
+              card={entry.card}
+              status={v.status}
+              onclick={() => handleCardClick(entry.id)}
+            />
+          </div>
+        {/if}
+      </div>
+    {/each}
+  {/if}
 </main>
 
 <style>

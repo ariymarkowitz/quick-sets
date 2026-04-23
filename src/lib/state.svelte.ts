@@ -1,3 +1,4 @@
+import { untrack } from 'svelte';
 import { generateDeck, shuffle, isValidSet, hasSet, findSet, type Card } from './game.js';
 import { saveScore as persistScore, getScores, getMode, setMode } from './storage.js';
 import { INITIAL_BOARD as BOARD_SIZE, MIN_BOARD, DEAL_SETTLE_MS, TOAST_MS, MODE_TIMINGS, VICTORY_MESSAGES } from './constants.js';
@@ -9,12 +10,15 @@ export type EntryStatus =
   | 'valid'
   | 'invalid'
   | 'removing'
-  | 'placeholder'
   | 'hint';
 
 export type BoardEntry = {
   id: number;
   card: Card | null;
+  dealIndex: number;
+};
+
+export type EntryView = {
   status: EntryStatus;
   dealDelay: number;
   removeDelay: number;
@@ -29,27 +33,109 @@ export type GameOverInfo = {
 
 export type GameMode = 'chill' | 'speedy';
 
+// Discriminated union driving the flash → remove → deal pipeline.
+type Resolution =
+  | null
+  | { stage: 'flash'; ids: number[]; valid: boolean }
+  | { stage: 'removing'; ids: number[]; stagger: number; next: 'deal' | 'reshuffle' | 'none' }
+  | { stage: 'dealing'; ids: number[] };
+
+type Phase =
+  | { kind: 'intro' }
+  | { kind: 'playing' }
+  | { kind: 'pausedMenu' }
+  | { kind: 'pausedTab' }
+  | { kind: 'over'; info: GameOverInfo };
+
 class GameState {
+  // --- Root state ---
   deck: Card[] = $state([]);
   board: BoardEntry[] = $state([]);
   setsFound: number = $state(0);
-  elapsed: number = $state(0);
-  gameActive: boolean = $state(false);
-  animating: boolean = $state(false);
-  toast: string = $state('');
-  scores: number[] = $state([]);
-  gameOver: GameOverInfo | null = $state(null);
-  menuOpen: boolean = $state(true);
-  mode: GameMode = $state('chill');
-  paused: boolean = $state(false);
-  cardsVisible: boolean = $state(false);
-  modalVisible: boolean = $state(true);
-  pendingAction: (() => void) | null = $state(null);
   hintsUsed: boolean = $state(false);
+
+  // Interaction
+  selectedIds: number[] = $state([]);
   hintIds: number[] = $state([]);
-  hintRevealCount: number = $state(0);
+  hintRevealed: number = $state(0);
+
+  // Pipeline
+  resolution: Resolution = $state(null);
+
+  // Timing
+  gameStartTime: number = $state(0);
+  pauseAccumulated: number = $state(0);
+  elapsed: number = $state(0);
+
+  // Phase
+  phase: Phase = $state({ kind: 'intro' });
+
+  // App
+  mode: GameMode = $state('chill');
+  scores: number[] = $state([]);
+  toast: string = $state('');
+
+  // Modal close handshake: a non-derivable intent flag. Actions that want to
+  // dismiss the modal (newGame / closeMenu) set this true via `closeModal()`;
+  // when the Modal finishes its exit animation and fires onclose, we clear it.
+  modalClosing: boolean = $state(false);
+
+  // Cards-exiting state: when `cardsShown` flips false while cards are still
+  // mounted, an effect sets this true so the grid entries animate out. After
+  // the staggered exit duration, the effect clears it, which unmounts them.
+  cardsExiting: boolean = $state(false);
+
+  // --- Derivations ---
   animSettings = $derived(MODE_TIMINGS[this.mode]);
-  activeEntries = $derived(this.board.filter(e => e.status !== 'placeholder'));
+  // `gameActive`: a game is in progress (playing or paused — not intro, not over).
+  // UI uses this to decide whether to show Resume/Restart vs Start.
+  gameActive = $derived(
+    this.phase.kind === 'playing' ||
+    this.phase.kind === 'pausedMenu' ||
+    this.phase.kind === 'pausedTab'
+  );
+  // `running`: game is actively tickable — used by internal action guards so
+  // clicks/hints don't fire during pause or over/intro.
+  running = $derived(this.phase.kind === 'playing');
+  paused = $derived(this.phase.kind === 'pausedMenu' || this.phase.kind === 'pausedTab');
+  menuOpen = $derived(this.phase.kind === 'intro' || this.phase.kind === 'pausedMenu');
+  gameOver = $derived<GameOverInfo | null>(this.phase.kind === 'over' ? this.phase.info : null);
+  modalOpen = $derived(this.menuOpen || this.gameOver !== null);
+  cardsShown = $derived(this.phase.kind === 'playing' || this.phase.kind === 'pausedTab');
+  cardsMounted = $derived(this.cardsShown || this.cardsExiting);
+  animating = $derived(this.resolution !== null);
+  activeEntries = $derived(this.board.filter(e => e.card !== null));
+
+  // Modal's `open` prop: only truly open once cards have finished exiting and
+  // the close handshake isn't in flight. Keeps "cards out, THEN modal in".
+  modalVisible = $derived(this.modalOpen && !this.cardsMounted && !this.modalClosing);
+
+  // Per-entry view. Replaces the mutated `entry.status` / delays.
+  view(entry: BoardEntry): EntryView {
+    const r = this.resolution;
+    let status: EntryStatus = null;
+    let removeDelay = 0;
+
+    if (this.cardsExiting) {
+      status = 'removing';
+      const idx = this.activeEntries.findIndex(e => e.id === entry.id);
+      removeDelay = idx < 0 ? 0 : idx * this.animSettings.fastStagger;
+    } else if (r?.stage === 'flash' && r.ids.includes(entry.id)) {
+      status = r.valid ? 'valid' : 'invalid';
+    } else if (r?.stage === 'removing' && r.ids.includes(entry.id)) {
+      status = 'removing';
+      removeDelay = r.ids.indexOf(entry.id) * r.stagger;
+    } else if (r?.stage === 'dealing' && r.ids.includes(entry.id)) {
+      status = 'dealing';
+    } else if (this.selectedIds.includes(entry.id)) {
+      status = 'selected';
+    } else if (this.hintIds.slice(0, this.hintRevealed).includes(entry.id)) {
+      status = 'hint';
+    }
+
+    const dealDelay = entry.dealIndex * this.animSettings.stagger;
+    return { status, dealDelay, removeDelay };
+  }
 }
 
 export const game = new GameState();
@@ -57,73 +143,12 @@ export const game = new GameState();
 let nextId = 0;
 const makeId = (): number => ++nextId;
 
-let gameStartTime = 0;
-let pauseStart = 0;
-let selectedIds: number[] = [];
-let visibilityPaused = false;
-
-$effect.root(() => {
-  game.scores = getScores();
-  game.mode = getMode();
-
-  $effect(() => {
-    if (!game.gameActive || game.paused) return;
-    const id = setInterval(() => {
-      game.elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
-    }, 1000);
-    return () => clearInterval(id);
-  });
-
-  $effect(() => {
-    if (!game.toast) return;
-    const id = setTimeout(() => { game.toast = ''; }, TOAST_MS);
-    return () => clearTimeout(id);
-  });
-
-  $effect(() => { setMode(game.mode); });
-
-  function onVisibilityChange() {
-    if (!game.gameActive || game.menuOpen) return;
-    if (document.hidden) {
-      if (!game.paused) {
-        pauseStart = Date.now();
-        game.paused = true;
-        visibilityPaused = true;
-      }
-    } else {
-      if (visibilityPaused && game.paused) {
-        gameStartTime += Date.now() - pauseStart;
-        game.paused = false;
-        visibilityPaused = false;
-      }
-    }
-  }
-
-  document.addEventListener('visibilitychange', onVisibilityChange);
-  return () => document.removeEventListener('visibilitychange', onVisibilityChange);
-});
-
-function staggerDealDelays(entries: BoardEntry[]): void {
-  entries.forEach((entry, i) => { entry.dealDelay = i * game.animSettings.stagger; });
+function totalRemoveDuration(n: number, stagger: number): number {
+  return Math.max(0, (n - 1)) * stagger + game.animSettings.removeDuration;
 }
 
-function staggerRemoveDelays(entries: BoardEntry[], stagger = game.animSettings.stagger): void {
-  entries.forEach((entry, i) => { entry.removeDelay = i * stagger; });
-}
-
-function totalRemoveDuration(n: number, stagger = game.animSettings.stagger): number {
-  return n * stagger + game.animSettings.removeDuration;
-}
-
-function scheduleDealClears(entries: BoardEntry[]): void {
-  if (entries.length === 0) return;
-  const ids = new Set(entries.map(e => e.id));
-  const lastDelay = Math.max(...entries.map(e => e.dealDelay));
-  setTimeout(() => {
-    for (const e of game.board) {
-      if (ids.has(e.id) && e.status === 'dealing') e.status = null;
-    }
-  }, lastDelay + game.animSettings.dealDuration);
+function totalDealDuration(n: number): number {
+  return Math.max(0, (n - 1)) * game.animSettings.stagger + game.animSettings.dealDuration;
 }
 
 function ensureBoardHasSet(cards: Card[], boardSize: number): void {
@@ -133,146 +158,53 @@ function ensureBoardHasSet(cards: Card[], boardSize: number): void {
   }
 }
 
-function setStatusFor(ids: number[], status: EntryStatus): void {
-  for (const e of game.board) {
-    if (ids.includes(e.id)) e.status = status;
-  }
-}
-
 function findBoardSet(): number[] | null {
-  const entries = game.board.filter(
-    e => e.status !== 'removing' && e.status !== 'dealing' && e.status !== 'placeholder' && e.card !== null,
-  );
+  const entries = game.board.filter(e => e.card !== null);
   const indices = findSet(entries.map(e => e.card as Card));
   if (!indices) return null;
   return indices.map(i => entries[i]!.id);
 }
 
-function dealCards(n: number): BoardEntry[] {
-  const count = Math.min(n, game.deck.length);
-  if (count <= 0) return [];
-
-  const newEntries: BoardEntry[] = [];
-  for (let i = 0; i < count; i++) {
-    const card = game.deck.pop()!;
-    newEntries.push({ id: makeId(), card, status: 'dealing', dealDelay: 0, removeDelay: 0 });
-  }
-  staggerDealDelays(newEntries);
-  game.board.push(...newEntries);
-  scheduleDealClears(newEntries);
-  return newEntries;
+function makeEntry(card: Card | null, dealIndex: number): BoardEntry {
+  return { id: makeId(), card, dealIndex };
 }
 
-function dealInExistingBoard(entries: BoardEntry[]): void {
-  for (const e of entries) e.status = 'dealing';
-  staggerDealDelays(entries);
-  scheduleDealClears(entries);
-  game.cardsVisible = true;
-}
+// Called when the dealing stage completes. Decides whether to end the game,
+// top up the board, reshuffle, or do nothing.
+function checkBoard(): void {
+  if (!game.running) return;
 
-function tryValidateSelection(): void {
-  const existingIds = new Set(game.board.map(e => e.id));
-  selectedIds = selectedIds.filter(id => existingIds.has(id));
-
-  if (selectedIds.length < 3 || game.animating) return;
-  game.animating = true;
-
-  const entries = selectedIds.map(id => game.board.find(e => e.id === id));
-  if (entries.some(e => !e)) {
-    selectedIds = [];
-    game.animating = false;
-    return;
-  }
-  const [a, b, c] = entries as [BoardEntry, BoardEntry, BoardEntry];
-  const ids = [a.id, b.id, c.id];
-
-  if (a.card && b.card && c.card && isValidSet(a.card, b.card, c.card)) {
-    setStatusFor(ids, 'valid');
-    game.setsFound += 1;
-    game.toast = '';
-    selectedIds = [];
-    setTimeout(() => removeAndReplenish(ids), game.animSettings.validFlash);
-  } else {
-    setStatusFor(ids, 'invalid');
-    selectedIds = [];
-    game.toast = 'Not a set!';
-    setTimeout(() => {
-      for (const e of game.board) { if (ids.includes(e.id) && e.status === 'invalid') e.status = null; }
-      game.animating = false;
-      tryValidateSelection();
-    }, game.animSettings.invalidFlash);
-  }
-}
-
-function removeAndReplenish(idsToRemove: number[]): void {
-  // Mark cards as removing → the {#if} in CardGrid toggles to false → out: transition fires.
-  // The grid slot div persists throughout, so no layout shift occurs.
-  const toRemove = game.board.filter(e => idsToRemove.includes(e.id));
-  staggerRemoveDelays(toRemove);
-  for (const e of toRemove) e.status = 'removing';
-
-  setTimeout(() => {
-    const replacingEntries: BoardEntry[] = [];
-    for (const e of game.board) {
-      if (e.status !== 'removing') continue;
-      if (game.deck.length > 0) {
-        e.card = game.deck.pop()!;
-        e.removeDelay = 0;
-        e.status = 'dealing';
-        replacingEntries.push(e);
-      } else {
-        e.card = null;
-        e.status = 'placeholder';
-      }
-    }
-    staggerDealDelays(replacingEntries);
-    scheduleDealClears(replacingEntries);
-    game.animating = false;
-    tryValidateSelection();
-    setTimeout(checkGameState, DEAL_SETTLE_MS);
-  }, totalRemoveDuration(idsToRemove.length));
-}
-
-function reshuffleAndDeal(): void {
-  game.toast = 'No sets here — reshuffling…';
-  game.animating = true;
-
-  const combined: Card[] = [
-    ...game.activeEntries.map(e => e.card).filter((c): c is Card => c !== null),
-    ...game.deck,
-  ];
-  ensureBoardHasSet(combined, BOARD_SIZE);
-  game.deck = combined;
-
-  // Stagger the exits: set removeDelay then mark all as removing in the same tick
-  // so Svelte fires each out: transition with the appropriate delay.
-  staggerRemoveDelays(game.board);
-  for (const entry of game.board) entry.status = 'removing';
-  selectedIds = [];
-
-  setTimeout(() => {
-    game.board = [];
-    dealCards(BOARD_SIZE);
-    game.animating = false;
-    setTimeout(checkGameState, game.animSettings.dealDuration);
-  }, totalRemoveDuration(game.board.length));
-}
-
-function checkGameState(): void {
-  if (!game.gameActive || game.animating) return;
-
-  if (game.activeEntries.length === 0 && game.deck.length === 0) {
+  const active = game.activeEntries;
+  if (active.length === 0 && game.deck.length === 0) {
     endGame();
     return;
   }
 
-  if (game.activeEntries.length < MIN_BOARD && game.deck.length > 0) {
-    dealCards(MIN_BOARD - game.activeEntries.length);
-    setTimeout(checkGameState, DEAL_SETTLE_MS);
+  if (active.length < MIN_BOARD && game.deck.length > 0) {
+    // Top up by filling empty slots (card === null) plus adding fresh entries.
+    const need = MIN_BOARD - active.length;
+    const dealingIds: number[] = [];
+    let dealIdx = 0;
+
+    // Fill existing empty slots first.
+    for (const e of game.board) {
+      if (e.card !== null || game.deck.length === 0 || dealingIds.length >= need) continue;
+      e.card = game.deck.pop()!;
+      e.dealIndex = dealIdx++;
+      dealingIds.push(e.id);
+    }
+    while (dealingIds.length < need && game.deck.length > 0) {
+      const entry = makeEntry(game.deck.pop()!, dealIdx++);
+      game.board.push(entry);
+      dealingIds.push(entry.id);
+    }
+    if (dealingIds.length > 0) {
+      game.resolution = { stage: 'dealing', ids: dealingIds };
+    }
     return;
   }
 
-  const boardCards = game.activeEntries.map(e => e.card).filter((c): c is Card => c !== null);
+  const boardCards = active.map(e => e.card).filter((c): c is Card => c !== null);
   if (hasSet(boardCards)) return;
 
   if (!hasSet([...boardCards, ...game.deck])) {
@@ -283,141 +215,311 @@ function checkGameState(): void {
   reshuffleAndDeal();
 }
 
-function endGame(): void {
-  game.gameActive = false;
+function reshuffleAndDeal(): void {
+  game.toast = 'No sets here — reshuffling…';
+  const combined: Card[] = [
+    ...game.activeEntries.map(e => e.card).filter((c): c is Card => c !== null),
+    ...game.deck,
+  ];
+  ensureBoardHasSet(combined, BOARD_SIZE);
+  game.deck = combined;
+  game.selectedIds = [];
 
+  // Remove every current entry with its normal stagger, then re-deal fresh.
+  const ids = game.board.map(e => e.id);
+  if (ids.length === 0) {
+    // Nothing to remove — go straight to dealing.
+    dealFreshBoard();
+    return;
+  }
+  game.resolution = { stage: 'removing', ids, stagger: game.animSettings.stagger, next: 'reshuffle' };
+}
+
+// Deals a fresh INITIAL_BOARD-sized board from the current deck.
+function dealFreshBoard(): void {
+  game.board = [];
+  const ids: number[] = [];
+  for (let i = 0; i < BOARD_SIZE && game.deck.length > 0; i++) {
+    const entry = makeEntry(game.deck.pop()!, i);
+    game.board.push(entry);
+    ids.push(entry.id);
+  }
+  if (ids.length > 0) {
+    game.resolution = { stage: 'dealing', ids };
+  }
+}
+
+function buildInitialBoard(): void {
+  game.deck = generateDeck();
+  ensureBoardHasSet(game.deck, BOARD_SIZE);
+  game.board = [];
+  for (let i = 0; i < BOARD_SIZE; i++) {
+    const entry = makeEntry(game.deck.pop()!, i);
+    game.board.push(entry);
+  }
+}
+
+function endGame(): void {
   const elapsedValue = game.elapsed;
   const title = VICTORY_MESSAGES[Math.floor(Math.random() * VICTORY_MESSAGES.length)]!;
   const disqualified = game.hintsUsed;
   const scores = disqualified ? getScores() : persistScore(elapsedValue);
   const currentIdx = disqualified ? -1 : scores.indexOf(elapsedValue);
   game.scores = scores;
-  hideCardsThenShowModal(() => {
-    game.gameOver = { title, time: elapsedValue, currentIdx, disqualified };
+  game.phase = { kind: 'over', info: { title, time: elapsedValue, currentIdx, disqualified } };
+}
+
+// --- Scope C: modal close handshake ---
+// `modalClosing` stays true across the Modal's exit animation and only flips
+// back to false once the action has also changed phase — otherwise
+// `modalVisible` could briefly recompute to true and re-open the Modal.
+let closeResolver: (() => void) | null = null;
+
+function closeModal(): Promise<void> {
+  if (!game.modalOpen) return Promise.resolve();
+  game.modalClosing = true;
+  return new Promise(res => { closeResolver = res; });
+}
+
+// Invoked by the Modal components when their exit animation ends.
+export function onModalClosed(): void {
+  const r = closeResolver;
+  closeResolver = null;
+  r?.();
+}
+
+// --- Scope A: app-lifetime effects ---
+$effect.root(() => {
+  game.scores = getScores();
+  game.mode = getMode();
+
+  // TimerTick — run while playing; sample Date.now on interval.
+  $effect(() => {
+    if (game.phase.kind !== 'playing') return;
+    const id = setInterval(() => {
+      game.elapsed = Math.floor((Date.now() - game.gameStartTime - game.pauseAccumulated) / 1000);
+    }, 1000);
+    return () => clearInterval(id);
   });
-}
 
-function hideCardsThenShowModal(prepareModal: () => void): void {
-  staggerRemoveDelays(game.activeEntries, game.animSettings.fastStagger);
-  for (const entry of game.activeEntries) entry.status = 'removing';
-  selectedIds = [];
-  const outroTotal = totalRemoveDuration(game.activeEntries.length, game.animSettings.fastStagger);
-  setTimeout(() => {
-    game.cardsVisible = false;
-    prepareModal();
-    game.modalVisible = true;
-  }, outroTotal);
-}
-
-function hideModalThenRun(action: () => void): void {
-  game.pendingAction = action;
-  game.modalVisible = false;
-}
-
-function performNewGameSetup(): void {
-  game.setsFound = 0;
-  selectedIds = [];
-  game.board = [];
-  game.deck = generateDeck();
-  ensureBoardHasSet(game.deck, BOARD_SIZE);
-  game.animating = false;
-  game.gameActive = true;
-  game.toast = '';
-  game.elapsed = 0;
-  game.gameOver = null;
-  game.menuOpen = false;
-  game.paused = false;
-  game.hintsUsed = false;
-  game.hintIds = [];
-  game.hintRevealCount = 0;
-  visibilityPaused = false;
-
-  gameStartTime = Date.now();
-}
-
-export function newGame(): void {
-  hideModalThenRun(() => {
-    performNewGameSetup();
-    dealCards(BOARD_SIZE);
-    game.cardsVisible = true;
-    setTimeout(checkGameState, DEAL_SETTLE_MS);
+  // PausePeriod — a pause period exists exactly while `paused` is true.
+  // Start captured on mount; duration applied on cleanup. No manual
+  // gameStartTime adjustments elsewhere.
+  $effect(() => {
+    if (!game.paused) return () => {};
+    const start = Date.now();
+    return () => {
+      game.pauseAccumulated += Date.now() - start;
+    };
   });
-}
 
-export function openMenu(): void {
-  if (game.menuOpen) return;
-  if (game.gameActive && !game.paused) {
-    pauseStart = Date.now();
-    game.paused = true;
-  }
-  visibilityPaused = false;
-  hideCardsThenShowModal(() => { game.menuOpen = true; });
-}
+  // Resolution — unified flash→remove→deal state machine. One effect,
+  // one cleanup, one timer at a time. Each stage transition re-runs the
+  // effect so the prior timeout is cleared via cleanup.
+  $effect(() => {
+    const r = game.resolution;
+    if (!r) return () => {};
 
-export function closeMenu(): void {
-  if (!game.menuOpen || !game.gameActive) return;
-  hideModalThenRun(() => {
-    game.menuOpen = false;
-    if (game.paused) {
-      gameStartTime += Date.now() - pauseStart;
-      game.paused = false;
+    let d: number;
+    if (r.stage === 'flash') {
+      d = r.valid ? game.animSettings.validFlash : game.animSettings.invalidFlash;
+    } else if (r.stage === 'removing') {
+      d = totalRemoveDuration(r.ids.length, r.stagger);
+    } else {
+      d = totalDealDuration(r.ids.length) + DEAL_SETTLE_MS;
     }
-    dealInExistingBoard(game.board.filter(e => e.card !== null && e.status !== 'placeholder'));
+
+    const timerId = setTimeout(() => {
+      if (r.stage === 'flash') {
+        if (r.valid) {
+          game.setsFound += 1;
+          game.selectedIds = [];
+          game.resolution = {
+            stage: 'removing',
+            ids: r.ids,
+            stagger: game.animSettings.stagger,
+            next: 'deal',
+          };
+        } else {
+          game.selectedIds = game.selectedIds.filter(x => !r.ids.includes(x));
+          game.toast = 'Not a set!';
+          game.resolution = null;
+        }
+      } else if (r.stage === 'removing') {
+        if (r.next === 'reshuffle') {
+          // Drop the board and re-deal from the shuffled combined deck.
+          dealFreshBoard();
+        } else {
+          // Replace each removed card with a fresh one from the deck.
+          const dealingIds: number[] = [];
+          let dealIdx = 0;
+          for (const e of game.board) {
+            if (!r.ids.includes(e.id)) continue;
+            if (game.deck.length > 0) {
+              e.card = game.deck.pop()!;
+              e.dealIndex = dealIdx++;
+              dealingIds.push(e.id);
+            } else {
+              e.card = null;
+            }
+          }
+          game.resolution = dealingIds.length > 0 ? { stage: 'dealing', ids: dealingIds } : null;
+          if (game.resolution === null) checkBoard();
+        }
+      } else {
+        game.resolution = null;
+        checkBoard();
+      }
+    }, d);
+
+    return () => clearTimeout(timerId);
   });
+
+  // ToastAutoDismiss
+  $effect(() => {
+    if (!game.toast) return () => {};
+    const id = setTimeout(() => { game.toast = ''; }, TOAST_MS);
+    return () => clearTimeout(id);
+  });
+
+  // VisibilityListener — pause the game when the tab hides, resume when back.
+  $effect(() => {
+    const onChange = () => {
+      if (game.phase.kind === 'playing' && document.hidden) {
+        game.phase = { kind: 'pausedTab' };
+      } else if (game.phase.kind === 'pausedTab' && !document.hidden) {
+        game.phase = { kind: 'playing' };
+      }
+    };
+    document.addEventListener('visibilitychange', onChange);
+    return () => document.removeEventListener('visibilitychange', onChange);
+  });
+
+  // ModePersist — external storage write; cleanup is a no-op for contract.
+  $effect(() => {
+    setMode(game.mode);
+    return () => {};
+  });
+
+  // CardsExiting — when `cardsShown` flips false while cards are mounted,
+  // run the staggered outro animation, then unmount by clearing the flag.
+  $effect(() => {
+    if (game.cardsShown) return () => {};
+    const { count, duration } = untrack(() => {
+      const count = game.activeEntries.length;
+      return {
+        count,
+        duration: totalRemoveDuration(count, game.animSettings.fastStagger),
+      };
+    });
+    if (count === 0) return () => {};
+    game.cardsExiting = true;
+    const id = setTimeout(() => { game.cardsExiting = false; }, duration);
+    return () => {
+      clearTimeout(id);
+      game.cardsExiting = false;
+    };
+  });
+
+  return () => {};
+});
+
+// --- Actions ---
+
+export function handleCardClick(id: number): void {
+  if (!game.running || game.resolution) return;
+
+  const entry = game.board.find(e => e.id === id);
+  if (!entry || entry.card === null) return;
+
+  // Any click clears the hint preview.
+  game.hintIds = [];
+  game.hintRevealed = 0;
+
+  if (game.selectedIds.includes(id)) {
+    game.selectedIds = game.selectedIds.filter(x => x !== id);
+    return;
+  }
+
+  const nextSelected = [...game.selectedIds, id];
+  game.selectedIds = nextSelected;
+
+  if (nextSelected.length === 3) {
+    const entries = nextSelected.map(sid => game.board.find(e => e.id === sid));
+    if (entries.some(e => !e || e.card === null)) {
+      game.selectedIds = [];
+      return;
+    }
+    const [a, b, c] = entries as [BoardEntry, BoardEntry, BoardEntry];
+    const valid = isValidSet(a.card as Card, b.card as Card, c.card as Card);
+    game.resolution = { stage: 'flash', ids: nextSelected, valid };
+  }
 }
 
 export function useHint(): void {
-  if (!game.gameActive || game.animating) return;
+  if (!game.running || game.resolution) return;
 
   game.hintsUsed = true;
 
   if (game.hintIds.length === 0) {
     const ids = findBoardSet();
     if (!ids) return;
-    for (const e of game.board) e.status = e.status === 'hint' || e.status === 'selected' ? null : e.status;
-    selectedIds = [];
+    game.selectedIds = [];
     game.hintIds = ids;
-    game.hintRevealCount = 0;
+    game.hintRevealed = 0;
   }
 
-  if (game.hintRevealCount < game.hintIds.length) {
-    setStatusFor([game.hintIds[game.hintRevealCount]!], 'hint');
-    game.hintRevealCount += 1;
+  if (game.hintRevealed < game.hintIds.length) {
+    game.hintRevealed += 1;
   }
 }
 
-export function handleCardClick(id: number): void {
-  if (!game.gameActive) return;
-
-  const entry = game.board.find(e => e.id === id);
-  if (!entry) return;
-
-  if (entry.status === 'selected') {
-    setStatusFor([id], null);
-    selectedIds = selectedIds.filter(x => x !== id);
-    return;
-  } else if (entry.status !== null && entry.status !== 'hint') return;
-
-  for (const e of game.board) if (e.status === 'hint') e.status = null;
+export async function newGame(): Promise<void> {
+  await closeModal();
+  // Reset root signals.
+  game.setsFound = 0;
+  game.selectedIds = [];
   game.hintIds = [];
-  game.hintRevealCount = 0;
-  setStatusFor([id], 'selected');
-  selectedIds = [...selectedIds, id];
-
-  tryValidateSelection();
+  game.hintRevealed = 0;
+  game.hintsUsed = false;
+  game.resolution = null;
+  game.toast = '';
+  game.elapsed = 0;
+  game.pauseAccumulated = 0;
+  buildInitialBoard();
+  game.gameStartTime = Date.now();
+  game.phase = { kind: 'playing' };
+  // Phase change closes the modal intent; clear the handshake flag and
+  // trigger the initial staggered deal-in.
+  game.modalClosing = false;
+  game.resolution = { stage: 'dealing', ids: game.board.map(e => e.id) };
 }
 
-export function runPendingAction(): void {
-  const a = game.pendingAction;
-  game.pendingAction = null;
-  a?.();
+export function openMenu(): void {
+  if (game.phase.kind === 'playing') {
+    game.phase = { kind: 'pausedMenu' };
+  }
+}
+
+export async function closeMenu(): Promise<void> {
+  if (game.phase.kind !== 'pausedMenu') return;
+  await closeModal();
+  // Re-assign dealIndex so the staggered deal-in plays on resume.
+  const active = game.board.filter(e => e.card !== null);
+  active.forEach((e, i) => { e.dealIndex = i; });
+  game.phase = { kind: 'playing' };
+  // Phase change closes the modal intent; clear the handshake flag.
+  game.modalClosing = false;
+  if (active.length > 0) {
+    game.resolution = { stage: 'dealing', ids: active.map(e => e.id) };
+  }
 }
 
 export function devSkipToEnd(): void {
-  if (!game.gameActive) return;
+  if (!game.running) return;
   game.deck = [];
   game.board = [];
-  selectedIds = [];
-  game.animating = false;
+  game.selectedIds = [];
+  game.resolution = null;
   endGame();
 }
