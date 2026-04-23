@@ -13,16 +13,18 @@ Prefer reusable components. Use Svelte 5 runes (not stores); prefer derived stat
 
 ## Architecture
 
-[src/App.svelte](src/App.svelte) composes `Header`, `CardGrid`, `GameOverModal`, `MenuModal`, `SvgDefs`.
+[src/App.svelte](src/App.svelte) composes `Header`, `CardGrid`, `GameOverModal`, `MenuModal`, `SvgDefs`, `Toast`.
 
-**State** lives entirely in [src/lib/state.svelte.ts](src/lib/state.svelte.ts) as a `GameState` class instance (`game`) with `$state` fields. Components read reactively and call exported actions; they never mutate state directly. Actions: `newGame`, `handleCardClick`, `openMenu`, `closeMenu`, `useHint`, `devAutoMatch`, `devSkipToEnd`.
+**State** lives entirely in [src/lib/state.svelte.ts](src/lib/state.svelte.ts) as a `GameState` class instance (`game`) with `$state` fields. Components read reactively and call exported actions; they never mutate state directly. Actions: `newGame`, `handleCardClick`, `openMenu`, `closeMenu`, `useHint`, `devSkipToEnd`.
 
 Key invariants:
-- `BoardEntry { id, card, status, dealDelay, removeDelay }` — `status`: `null | 'dealing' | 'selected' | 'valid' | 'invalid' | 'removing' | 'placeholder' | 'hint'`. `id` is monotonic so animations survive concurrent mutations. `'placeholder'` keeps layout when deck is empty; `'hint'` is applied progressively — each `useHint()` call reveals one more card of the same set. `hintIds` stores the current hint set's IDs; reveal count is derived from how many of those entries have `status === 'hint'`. Using hints sets `hintsUsed`, disqualifying the score.
-- `animating` serializes animations; buffered clicks in `selectedIds` are replayed via `checkPendingSelection`.
-- `checkGameState` tops up the board to `MIN_BOARD`, reshuffles when no set exists, ends the game when board ∪ deck has no set.
-- Modal transitions: `hideCardsThenShowModal` animates cards out then opens modal; `hideModalThenRun` stores action in `pendingAction` and closes modal first.
-- `menuOpen`/`paused`/`cardsVisible`/`modalVisible` coordinate menu ↔ game. Pause adjusts `gameStartTime` on resume.
+- `BoardEntry { id, card }` holds persistent identity (monotonic `id`) decoupled from transient view state. Per-card view is computed by `game.cardStatus(entry)` returning `{ transition, highlight }` — `transition: null | { type: 'dealing' | 'removing', delay }`, `highlight: null | 'selected' | 'hint' | 'valid' | 'invalid'`. A `card: null` entry keeps layout when the deck is empty.
+- `phase: Phase` is a discriminated union (`'intro' | 'playing' | 'pausedMenu' | 'pausedTab' | 'over'`) — the single source of truth for lifecycle. Derived: `running`, `paused`, `menuOpen`, `modalOpen`, `cardsShown`, `gameActive`, `gameOver`.
+- `resolution: Resolution` is a discriminated union (`null | flash | removing | dealing`) driving the flash → remove → deal pipeline. A single `$effect` watches `resolution`, schedules one timeout per stage, and transitions. `animating` is derived from `resolution !== null` and gates user input.
+- Hints: each `useHint()` call increments `hintRevealed` up to `hintIds.length`. Any click clears the preview. Using hints sets `hintsUsed`, disqualifying the score.
+- `checkBoard()` runs after dealing: tops up to `MIN_BOARD`, reshuffles via `refresh()` when no set exists on board, ends the game when board ∪ deck has no set.
+- `viewTransition: 'cardsExiting' | 'modalExiting' | null` coordinates modal ↔ cards handoff. `closeModal()` awaits a Promise resolved by `onModalClosed()` (fired by Modal when its exit animation ends).
+- Tab-visibility auto-pauses via the `pausedTab` phase. Timer lives in [timer.svelte.ts](src/lib/timer.svelte.ts); `timePaused` is derived and passed in so the timer pauses for intro/over/paused phases.
 - `animSettings` is `$derived` from `MODE_TIMINGS[mode]` — all timings change with `'chill'`/`'speedy'` mode.
 
 [MenuModal.svelte](src/components/MenuModal.svelte) — multi-view modal (main/help/leaderboard), wraps [Modal.svelte](src/components/Modal.svelte) (animated primitive, `open` prop, fires `onclose` after exit animation).
