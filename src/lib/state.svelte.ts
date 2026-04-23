@@ -13,7 +13,6 @@ export type Highlight = null | 'selected' | 'hint' | 'valid' | 'invalid';
 export type BoardEntry = {
   id: number;
   card: Card | null;
-  dealIndex: number;
 };
 
 export type EntryView = {
@@ -109,19 +108,20 @@ class GameState {
     const r = this.resolution;
     let transition: EntryTransition = null;
     let highlight: Highlight = null;
-    let removeDelay = 0;
+
+    const rId = r?.ids.indexOf(entry.id) ?? -1;
 
     if (this.cardsExiting) {
       const idx = this.activeEntries.findIndex(e => e.id === entry.id);
-      removeDelay = idx < 0 ? 0 : idx * this.animSettings.fastStagger;
+      const removeDelay = Math.max(0, idx * this.animSettings.fastStagger);
       transition = { type: 'removing', delay: removeDelay };
-    } else if (r?.stage === 'removing' && r.ids.includes(entry.id)) {
-      transition = { type: 'removing', delay: r.ids.indexOf(entry.id) * r.stagger };
-    } else if (r?.stage === 'dealing' && r.ids.includes(entry.id)) {
-      transition = { type: 'dealing', delay: entry.dealIndex * this.animSettings.stagger };
+    } else if (r?.stage === 'removing' && rId >= 0) {
+      transition = { type: 'removing', delay: rId * r.stagger };
+    } else if (r?.stage === 'dealing' && rId >= 0) {
+      transition = { type: 'dealing', delay: rId * this.animSettings.stagger };
     }
 
-    if (r?.stage === 'flash' && r.ids.includes(entry.id)) {
+    if (r?.stage === 'flash' && rId >= 0) {
       highlight = r.valid ? 'valid' : 'invalid';
     } else if (this.hintIds.slice(0, this.hintRevealed).includes(entry.id)) {
       highlight = 'hint';
@@ -160,8 +160,8 @@ function findBoardSet(): number[] | null {
   return indices.map(i => entries[i]!.id);
 }
 
-function makeEntry(card: Card | null, dealIndex: number): BoardEntry {
-  return { id: makeId(), card, dealIndex };
+function makeEntry(card: Card | null): BoardEntry {
+  return { id: makeId(), card };
 }
 
 // Called when the dealing stage completes. Decides whether to end the game,
@@ -175,28 +175,6 @@ function checkBoard(): void {
     return;
   }
 
-  if (active.length < MIN_BOARD && game.deck.length > 0) {
-    const need = MIN_BOARD - active.length;
-    const dealingIds: number[] = [];
-    let dealIdx = 0;
-
-    for (const e of game.board) {
-      if (e.card !== null || game.deck.length === 0 || dealingIds.length >= need) continue;
-      e.card = game.deck.pop()!;
-      e.dealIndex = dealIdx++;
-      dealingIds.push(e.id);
-    }
-    while (dealingIds.length < need && game.deck.length > 0) {
-      const entry = makeEntry(game.deck.pop()!, dealIdx++);
-      game.board.push(entry);
-      dealingIds.push(entry.id);
-    }
-    if (dealingIds.length > 0) {
-      game.resolution = { stage: 'dealing', ids: dealingIds };
-    }
-    return;
-  }
-
   const boardCards = active.map(e => e.card!);
   if (hasSet(boardCards)) return;
 
@@ -205,10 +183,10 @@ function checkBoard(): void {
     return;
   }
 
-  reshuffleAndDeal();
+  refresh();
 }
 
-function reshuffleAndDeal(): void {
+function refresh(): void {
   game.toast = 'No sets here — reshuffling…';
   const combined: Card[] = [...game.activeEntries.map(e => e.card!), ...game.deck];
   ensureBoardHasSet(combined, BOARD_SIZE);
@@ -216,37 +194,28 @@ function reshuffleAndDeal(): void {
   game.selectedIds = [];
 
   const ids = game.board.map(e => e.id);
-  if (ids.length === 0) {
-    // Nothing to remove — go straight to dealing.
-    dealFreshBoard();
-    return;
-  }
   game.resolution = { stage: 'removing', ids, stagger: game.animSettings.stagger, next: 'reshuffle' };
 }
 
-// Pops up to `count` cards off the deck into fresh entries starting at dealIndex 0.
-function dealFresh(count: number): number[] {
-  game.board = [];
+function topUp(target: number): void {
   const ids: number[] = [];
-  for (let i = 0; i < count && game.deck.length > 0; i++) {
-    const e = makeEntry(game.deck.pop()!, i);
+  for (const e of game.board) {
+    if (e.card !== null) continue;
+    if (game.deck.length === 0) break;
+    e.card = game.deck.pop()!;
+    ids.push(e.id);
+  }
+  while (game.activeEntries.length < target && game.deck.length > 0) {
+    const e = makeEntry(game.deck.pop()!);
     game.board.push(e);
     ids.push(e.id);
   }
-  return ids;
+  if (ids.length > 0) game.resolution = { stage: 'dealing', ids };
 }
 
 function dealFreshBoard(): void {
-  const ids = dealFresh(BOARD_SIZE);
-  if (ids.length > 0) {
-    game.resolution = { stage: 'dealing', ids };
-  }
-}
-
-function buildInitialBoard(): void {
-  game.deck = generateDeck();
-  ensureBoardHasSet(game.deck, BOARD_SIZE);
-  dealFresh(BOARD_SIZE);
+  game.board = [];
+  topUp(BOARD_SIZE);
 }
 
 function endGame(): void {
@@ -339,22 +308,10 @@ $effect.root(() => {
         }
       } else if (r.stage === 'removing') {
         if (r.next === 'reshuffle') {
-          // Drop the board and re-deal from the shuffled combined deck.
           dealFreshBoard();
         } else {
-          const dealingIds: number[] = [];
-          let dealIdx = 0;
-          for (const e of game.board) {
-            if (!r.ids.includes(e.id)) continue;
-            if (game.deck.length > 0) {
-              e.card = game.deck.pop()!;
-              e.dealIndex = dealIdx++;
-              dealingIds.push(e.id);
-            } else {
-              e.card = null;
-            }
-          }
-          game.resolution = dealingIds.length > 0 ? { stage: 'dealing', ids: dealingIds } : null;
+          for (const e of game.board) if (r.ids.includes(e.id)) e.card = null;
+          topUp(MIN_BOARD);
           if (game.resolution === null) checkBoard();
         }
       } else {
@@ -456,16 +413,6 @@ export function useHint(): void {
   }
 }
 
-// Re-index active entries and start the staggered deal-in animation.
-// Used by newGame and closeMenu after their phase change + handshake clear.
-function startDealIn(): void {
-  const active = game.activeEntries;
-  active.forEach((e, i) => { e.dealIndex = i; });
-  if (active.length > 0) {
-    game.resolution = { stage: 'dealing', ids: active.map(e => e.id) };
-  }
-}
-
 export async function newGame(): Promise<void> {
   await closeModal();
   // Reset root signals.
@@ -478,13 +425,16 @@ export async function newGame(): Promise<void> {
   game.toast = '';
   game.elapsed = 0;
   game.pauseAccumulated = 0;
-  buildInitialBoard();
+
+  game.deck = generateDeck();
+  ensureBoardHasSet(game.deck, BOARD_SIZE);
+  dealFreshBoard();
+
   game.gameStartTime = Date.now();
   game.phase = { kind: 'playing' };
   // Phase change closes the modal intent; clear the handshake flag and
   // trigger the initial staggered deal-in.
   game.modalClosing = false;
-  startDealIn();
 }
 
 export function openMenu(): void {
@@ -499,7 +449,7 @@ export async function closeMenu(): Promise<void> {
   game.phase = { kind: 'playing' };
   // Phase change closes the modal intent; clear the handshake flag.
   game.modalClosing = false;
-  startDealIn();
+  game.resolution = { stage: 'dealing', ids: game.activeEntries.map(e => e.id) };
 }
 
 export function devSkipToEnd(): void {
