@@ -4,16 +4,17 @@
     SHAPE_DATA, SHAPE_SLOT_H,
   } from '../lib/constants';
   import { game } from '../lib/state.svelte';
-  import type { EntryStatus } from '../lib/state.svelte';
+  import type { EntryTransition, Highlight } from '../lib/state.svelte';
   import type { Card } from '../lib/game';
 
   type Props = {
     card: Card;
-    status: EntryStatus;
+    status: EntryTransition;
+    highlight: Highlight;
     onclick: () => void;
   };
 
-  let { card, status, onclick }: Props = $props();
+  let { card, highlight, onclick }: Props = $props();
 
   function onpointerdown(e: PointerEvent) {
     e.preventDefault();
@@ -29,12 +30,7 @@
 </script>
 
 <div
-  class="card"
-  class:selected={status === 'selected'}
-  class:valid={status === 'valid'}
-  class:invalid={status === 'invalid'}
-  class:hint={status === 'hint'}
-  class:chill={game.mode === 'chill'}
+  class={['card', highlight, game.mode]}
   role="button"
   tabindex="0"
   {onpointerdown}

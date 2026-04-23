@@ -3,14 +3,12 @@ import { generateDeck, shuffle, isValidSet, hasSet, findSet, type Card } from '.
 import { saveScore as persistScore, getScores, getMode, setMode } from './storage.js';
 import { INITIAL_BOARD as BOARD_SIZE, MIN_BOARD, DEAL_SETTLE_MS, TOAST_MS, MODE_TIMINGS, VICTORY_MESSAGES } from './constants.js';
 
-export type EntryStatus =
+export type EntryTransition =
   | null
-  | 'dealing'
-  | 'selected'
-  | 'valid'
-  | 'invalid'
-  | 'removing'
-  | 'hint';
+  | {type: 'dealing', delay: number}
+  | {type: 'removing', delay: number}
+
+export type Highlight = null | 'selected' | 'hint' | 'valid' | 'invalid';
 
 export type BoardEntry = {
   id: number;
@@ -19,9 +17,8 @@ export type BoardEntry = {
 };
 
 export type EntryView = {
-  status: EntryStatus;
-  dealDelay: number;
-  removeDelay: number;
+  transition: EntryTransition;
+  highlight: Highlight;
 };
 
 export type GameOverInfo = {
@@ -108,30 +105,31 @@ class GameState {
   modalVisible = $derived(this.modalOpen && !this.cardsMounted && !this.modalClosing);
 
   // Per-entry view. Replaces the mutated `entry.status` / delays.
-  view(entry: BoardEntry): EntryView {
+  cardStatus(entry: BoardEntry): EntryView {
     const r = this.resolution;
-    let status: EntryStatus = null;
+    let transition: EntryTransition = null;
+    let highlight: Highlight = null;
     let removeDelay = 0;
 
     if (this.cardsExiting) {
-      status = 'removing';
       const idx = this.activeEntries.findIndex(e => e.id === entry.id);
       removeDelay = idx < 0 ? 0 : idx * this.animSettings.fastStagger;
-    } else if (r?.stage === 'flash' && r.ids.includes(entry.id)) {
-      status = r.valid ? 'valid' : 'invalid';
+      transition = { type: 'removing', delay: removeDelay };
     } else if (r?.stage === 'removing' && r.ids.includes(entry.id)) {
-      status = 'removing';
-      removeDelay = r.ids.indexOf(entry.id) * r.stagger;
+      transition = { type: 'removing', delay: r.ids.indexOf(entry.id) * r.stagger };
     } else if (r?.stage === 'dealing' && r.ids.includes(entry.id)) {
-      status = 'dealing';
-    } else if (this.selectedIds.includes(entry.id)) {
-      status = 'selected';
-    } else if (this.hintIds.slice(0, this.hintRevealed).includes(entry.id)) {
-      status = 'hint';
+      transition = { type: 'dealing', delay: entry.dealIndex * this.animSettings.stagger };
     }
 
-    const dealDelay = entry.dealIndex * this.animSettings.stagger;
-    return { status, dealDelay, removeDelay };
+    if (r?.stage === 'flash' && r.ids.includes(entry.id)) {
+      highlight = r.valid ? 'valid' : 'invalid';
+    } else if (this.hintIds.slice(0, this.hintRevealed).includes(entry.id)) {
+      highlight = 'hint';
+    } else if (this.selectedIds.includes(entry.id)) {
+      highlight = 'selected';
+    }
+
+    return { transition, highlight };
   }
 }
 

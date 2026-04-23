@@ -15,17 +15,18 @@
       -->
       <div class="card-slot">
         {#if entry.card !== null}
-          {@const v = game.view(entry)}
+          {@const v = game.cardStatus(entry)}
           <div
             class="card-inner"
-            class:dealing={v.status === 'dealing'}
-            class:removing={v.status === 'removing'}
+            class:dealing={v.transition?.type === 'dealing'}
+            class:removing={v.transition?.type === 'removing'}
             class:chill={isChill}
-            style="--deal-delay:{v.dealDelay}ms; --remove-delay:{v.removeDelay}ms"
+            style="--delay:{v.transition?.delay}ms"
           >
             <Card
               card={entry.card}
-              status={v.status}
+              status={v.transition}
+              highlight={v.highlight}
               onclick={() => handleCardClick(entry.id)}
             />
           </div>
@@ -109,14 +110,14 @@
   }
 
   .card-inner.dealing {
-    animation: dealIn var(--deal-duration) var(--deal-delay) both cubic-bezier(0.33, 1, 0.68, 1);
+    animation: dealIn var(--deal-duration) var(--delay) both cubic-bezier(0.33, 1, 0.68, 1);
   }
 
   .card-inner.removing {
-    animation: dealOut var(--remove-duration) var(--remove-delay) forwards;
+    animation: dealOut var(--remove-duration) var(--delay) forwards;
   }
 
   .card-inner.chill.removing {
-    animation: dealOutChill var(--remove-duration) var(--remove-delay) forwards cubic-bezier(0.4, 0, 0.6, 1);
+    animation: dealOutChill var(--remove-duration) var(--delay) forwards cubic-bezier(0.4, 0, 0.6, 1);
   }
 </style>
