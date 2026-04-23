@@ -423,7 +423,6 @@ export async function newGame(): Promise<void> {
   game.resolution = null;
   game.toast = '';
   game.elapsed = 0;
-  game.pauseAccumulated = 0;
 
   game.deck = generateDeck();
   ensureBoardHasSet(game.deck, BOARD_SIZE);
@@ -431,8 +430,7 @@ export async function newGame(): Promise<void> {
 
   game.gameStartTime = Date.now();
   game.phase = { kind: 'playing' };
-  // Phase change closes the modal intent; clear the handshake flag and
-  // trigger the initial staggered deal-in.
+
   game.modalClosing = false;
   // PausePeriod effect cleanup fires after this tick, adding the old pause
   // duration to pauseAccumulated. Reset it once effects have flushed.
