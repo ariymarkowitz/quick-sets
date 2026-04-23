@@ -1,4 +1,4 @@
-import { untrack } from 'svelte';
+import { untrack, tick } from 'svelte';
 import { generateDeck, shuffle, isValidSet, hasSet, findSet, type Card } from './game.js';
 import { saveScore as persistScore, getScores, getMode, setMode } from './storage.js';
 import { INITIAL_BOARD as BOARD_SIZE, MIN_BOARD, DEAL_SETTLE_MS, TOAST_MS, MODE_TIMINGS, VICTORY_MESSAGES } from './constants.js';
@@ -430,11 +430,15 @@ export async function newGame(): Promise<void> {
   ensureBoardHasSet(game.deck, BOARD_SIZE);
   dealFreshBoard();
 
-  game.gameStartTime = Date.now();
   game.phase = { kind: 'playing' };
   // Phase change closes the modal intent; clear the handshake flag and
   // trigger the initial staggered deal-in.
   game.modalClosing = false;
+  // PausePeriod effect cleanup fires after this tick, adding the old pause
+  // duration to pauseAccumulated. Reset both after effects flush.
+  await tick();
+  game.pauseAccumulated = 0;
+  game.gameStartTime = Date.now();
 }
 
 export function openMenu(): void {
