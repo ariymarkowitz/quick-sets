@@ -40,7 +40,7 @@
   {onkeydown}
 >
   <svg viewBox="0 0 {CARD_W} {CARD_H}" class="card-svg" preserveAspectRatio="xMidYMid meet">
-    {#each Array.from({ length: entry.card.number }, (_, i) => i) as i}
+    {#each [...Array(entry.card.number).keys()] as i}
       {@const shapeH = SHAPE_DATA[entry.card.shape].h * SHAPE_SCALE}
       {@const startY = (CARD_H - (entry.card.number - 1) * SHAPE_SLOT_H) / 2}
       {@const ty = startY + i * SHAPE_SLOT_H - shapeH / 2}

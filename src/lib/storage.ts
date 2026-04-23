@@ -1,18 +1,13 @@
 export type Theme = 'light' | 'dark';
-export type GameMode = 'chill' | 'speedy';
+import type { GameMode } from './state.svelte.js';
 
 const THEME_KEY = 'set-game-theme';
 const SCORES_KEY = 'set-game-scores';
 const MODE_KEY = 'set-game-mode';
 
 export function initTheme(): Theme {
-  let theme: Theme = 'light';
-  try {
-    const stored = localStorage.getItem(THEME_KEY);
-    if (stored === 'light' || stored === 'dark') theme = stored;
-  } catch (_) {
-    // ignore
-  }
+  const stored = localStorage.getItem(THEME_KEY);
+  const theme: Theme = stored === 'light' || stored === 'dark' ? stored : 'light';
   document.body.className = theme;
   return theme;
 }
@@ -22,11 +17,7 @@ export function getTheme(): Theme {
 }
 
 export function setTheme(theme: Theme): void {
-  try {
-    localStorage.setItem(THEME_KEY, theme);
-  } catch (_) {
-    // ignore
-  }
+  localStorage.setItem(THEME_KEY, theme);
   document.body.className = theme;
 }
 
@@ -38,33 +29,21 @@ export function toggleTheme(): Theme {
 }
 
 export function getMode(): GameMode {
-  try {
-    const stored = localStorage.getItem(MODE_KEY);
-    if (stored === 'chill' || stored === 'speedy') return stored;
-  } catch (_) {
-    // ignore
-  }
+  const stored = localStorage.getItem(MODE_KEY);
+  if (stored === 'chill' || stored === 'speedy') return stored;
   return 'chill';
 }
 
 export function setMode(mode: GameMode): void {
-  try {
-    localStorage.setItem(MODE_KEY, mode);
-  } catch (_) {
-    // ignore
-  }
+  localStorage.setItem(MODE_KEY, mode);
 }
 
 export function getScores(): number[] {
-  try {
-    const raw = localStorage.getItem(SCORES_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter((x): x is number => typeof x === 'number');
-  } catch (_) {
-    return [];
-  }
+  const raw = localStorage.getItem(SCORES_KEY);
+  if (!raw) return [];
+  const parsed: unknown = JSON.parse(raw);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter((x): x is number => typeof x === 'number');
 }
 
 export function saveScore(seconds: number): number[] {
@@ -72,10 +51,6 @@ export function saveScore(seconds: number): number[] {
   scores.push(seconds);
   scores.sort((a, b) => a - b);
   const capped = scores.slice(0, 5);
-  try {
-    localStorage.setItem(SCORES_KEY, JSON.stringify(capped));
-  } catch (_) {
-    // ignore
-  }
+  localStorage.setItem(SCORES_KEY, JSON.stringify(capped));
   return capped;
 }

@@ -16,7 +16,7 @@
   {/if}
   <h3>Top Times</h3>
   <ol id="leaderboard-list">
-    {#each game.gameOver?.scores ?? [] as s, i}
+    {#each game.scores as s, i}
       <li class:current-score={i === game.gameOver?.currentIdx}>
         {i + 1}. {formatTime(s)}
       </li>

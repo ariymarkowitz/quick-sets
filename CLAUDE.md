@@ -27,6 +27,6 @@ Key invariants:
 
 [MenuModal.svelte](src/components/MenuModal.svelte) — multi-view modal (main/help/leaderboard), wraps [Modal.svelte](src/components/Modal.svelte) (animated primitive, `open` prop, fires `onclose` after exit animation).
 
-Other modules: [game.ts](src/lib/game.ts) — pure logic (`isValidSet`, `hasSet`, `findSet`, `formatTime`). [constants.ts](src/lib/constants.ts) — timings, board sizes, `MODE_TIMINGS`, SVG paths/colors. [storage.ts](src/lib/storage.ts) — localStorage for top-5 scores, theme, mode. [actions.ts](src/lib/actions.ts) — `bodyClass` Svelte action.
+Other modules: [game.ts](src/lib/game.ts) — pure logic (`isValidSet`, `hasSet`, `findSet`, `formatTime`). [constants.ts](src/lib/constants.ts) — timings, board sizes, `MODE_TIMINGS`, SVG paths/colors. [storage.ts](src/lib/storage.ts) — localStorage for top-5 scores, theme, mode.
 
 Card visuals: SVG `<symbol>` defs in [SvgDefs.svelte](src/components/SvgDefs.svelte), `<use>`-referenced from [Card.svelte](src/components/Card.svelte); striped fills via `<pattern>` defs keyed by color.

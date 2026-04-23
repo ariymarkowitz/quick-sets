@@ -23,7 +23,6 @@ export type BoardEntry = {
 export type GameOverInfo = {
   title: string;
   time: number;
-  scores: number[];
   currentIdx: number;
   disqualified: boolean;
 };
@@ -48,6 +47,7 @@ class GameState {
   pendingAction: (() => void) | null = $state(null);
   hintsUsed: boolean = $state(false);
   hintIds: number[] = $state([]);
+  hintRevealCount: number = $state(0);
   animSettings = $derived(MODE_TIMINGS[this.mode]);
   activeEntries = $derived(this.board.filter(e => e.status !== 'placeholder'));
 }
@@ -63,12 +63,8 @@ let selectedIds: number[] = [];
 let visibilityPaused = false;
 
 $effect.root(() => {
-  try {
-    game.scores = getScores();
-    game.mode = getMode();
-  } catch (_) {
-    // ignore (e.g. SSR)
-  }
+  game.scores = getScores();
+  game.mode = getMode();
 
   $effect(() => {
     if (!game.gameActive || game.paused) return;
@@ -107,9 +103,9 @@ $effect.root(() => {
   return () => document.removeEventListener('visibilitychange', onVisibilityChange);
 });
 
-function setStatusFor(ids: number[], status: EntryStatus, from?: EntryStatus): void {
+function setStatusFor(ids: number[], status: EntryStatus): void {
   for (const e of game.board) {
-    if (ids.includes(e.id) && (from === undefined || e.status === from)) e.status = status;
+    if (ids.includes(e.id)) e.status = status;
   }
 }
 
@@ -141,13 +137,9 @@ function tryValidateSelection(): void {
   const existingIds = new Set(game.board.map(e => e.id));
   selectedIds = selectedIds.filter(id => existingIds.has(id));
 
-  if (selectedIds.length === 3 && !game.animating) {
-    game.animating = true;
-    validateSelection();
-  }
-}
+  if (selectedIds.length < 3 || game.animating) return;
+  game.animating = true;
 
-function validateSelection(): void {
   const entries = selectedIds.map(id => game.board.find(e => e.id === id));
   if (entries.some(e => !e)) {
     selectedIds = [];
@@ -168,7 +160,7 @@ function validateSelection(): void {
     selectedIds = [];
     game.toast = 'Not a set!';
     setTimeout(() => {
-      setStatusFor(ids, null, 'invalid');
+      for (const e of game.board) { if (ids.includes(e.id) && e.status === 'invalid') e.status = null; }
       game.animating = false;
       tryValidateSelection();
     }, game.animSettings.invalidFlash);
@@ -223,7 +215,7 @@ function reshuffleAndDeal(): void {
 
   setTimeout(() => {
     game.board = [];
-    dealCards(Math.min(INITIAL_BOARD, game.deck.length));
+    dealCards(INITIAL_BOARD);
     game.animating = false;
     setTimeout(checkGameState, game.animSettings.dealDuration);
   }, totalRemoveDuration(game.board.length));
@@ -284,13 +276,14 @@ function totalRemoveDuration(n: number, stagger = game.animSettings.stagger): nu
 }
 
 function scheduleDealClears(entries: BoardEntry[]): void {
-  entries.forEach(e => {
-    const { id, dealDelay } = e;
-    setTimeout(() => {
-      const entry = game.board.find(x => x.id === id);
-      if (entry && entry.status === 'dealing') entry.status = null;
-    }, dealDelay + game.animSettings.dealDuration);
-  });
+  if (entries.length === 0) return;
+  const ids = new Set(entries.map(e => e.id));
+  const lastDelay = Math.max(...entries.map(e => e.dealDelay));
+  setTimeout(() => {
+    for (const e of game.board) {
+      if (ids.has(e.id) && e.status === 'dealing') e.status = null;
+    }
+  }, lastDelay + game.animSettings.dealDuration);
 }
 
 function ensureBoardHasSet(cards: Card[], boardSize: number): void {
@@ -304,13 +297,13 @@ function endGame(): void {
   game.gameActive = false;
 
   const elapsedValue = game.elapsed;
-  const title = VICTORY_MESSAGES[Math.floor(Math.random() * VICTORY_MESSAGES.length)];
+  const title = VICTORY_MESSAGES[Math.floor(Math.random() * VICTORY_MESSAGES.length)]!;
   const disqualified = game.hintsUsed;
   const scores = disqualified ? getScores() : persistScore(elapsedValue);
   const currentIdx = disqualified ? -1 : scores.indexOf(elapsedValue);
   game.scores = scores;
   hideCardsThenShowModal(() => {
-    game.gameOver = { title, time: elapsedValue, scores, currentIdx, disqualified };
+    game.gameOver = { title, time: elapsedValue, currentIdx, disqualified };
   });
 }
 
@@ -329,12 +322,10 @@ function performNewGameSetup(): void {
   game.paused = false;
   game.hintsUsed = false;
   game.hintIds = [];
+  game.hintRevealCount = 0;
   visibilityPaused = false;
 
   gameStartTime = Date.now();
-
-  dealCards(INITIAL_BOARD);
-  setTimeout(() => checkGameState(), DEAL_SETTLE_MS);
 }
 
 export function runPendingAction(): void {
@@ -343,11 +334,19 @@ export function runPendingAction(): void {
   a?.();
 }
 
+function dealInExistingBoard(entries: BoardEntry[]): void {
+  for (const e of entries) e.status = 'dealing';
+  staggerDealDelays(entries);
+  scheduleDealClears(entries);
+  game.cardsVisible = true;
+}
+
 export function newGame(): void {
   hideModalThenRun(() => {
     performNewGameSetup();
-    staggerDealDelays(game.board);
+    dealCards(INITIAL_BOARD);
     game.cardsVisible = true;
+    setTimeout(checkGameState, DEAL_SETTLE_MS);
   });
 }
 
@@ -370,25 +369,8 @@ export function closeMenu(): void {
       gameStartTime += Date.now() - pauseStart;
       game.paused = false;
     }
-    const dealable = game.board.filter(e => e.card !== null && e.status !== 'placeholder');
-    for (const e of dealable) e.status = 'dealing';
-    staggerDealDelays(dealable);
-    scheduleDealClears(dealable);
-    game.cardsVisible = true;
+    dealInExistingBoard(game.board.filter(e => e.card !== null && e.status !== 'placeholder'));
   });
-}
-
-export function devAutoMatch(): void {
-  if (!game.gameActive || game.animating) return;
-  const ids = findBoardSet();
-  if (!ids) return;
-  for (const e of game.board) {
-    if (ids.includes(e.id)) e.status = 'selected';
-    else if (e.status === 'selected') e.status = null;
-  }
-  selectedIds = [...ids];
-  game.animating = true;
-  validateSelection();
 }
 
 export function useHint(): void {
@@ -402,24 +384,13 @@ export function useHint(): void {
     for (const e of game.board) e.status = e.status === 'hint' || e.status === 'selected' ? null : e.status;
     selectedIds = [];
     game.hintIds = ids;
+    game.hintRevealCount = 0;
   }
 
-  const currentlyRevealed = game.hintIds.filter(id =>
-    game.board.some(e => e.id === id && e.status === 'hint')
-  ).length;
-
-  if (currentlyRevealed < game.hintIds.length) {
-    setStatusFor([game.hintIds[currentlyRevealed]!], 'hint');
+  if (game.hintRevealCount < game.hintIds.length) {
+    setStatusFor([game.hintIds[game.hintRevealCount]!], 'hint');
+    game.hintRevealCount += 1;
   }
-}
-
-export function devSkipToEnd(): void {
-  if (!game.gameActive) return;
-  game.deck = [];
-  game.board = [];
-  selectedIds = [];
-  game.animating = false;
-  endGame();
 }
 
 export function handleCardClick(id: number): void {
@@ -436,8 +407,18 @@ export function handleCardClick(id: number): void {
 
   for (const e of game.board) if (e.status === 'hint') e.status = null;
   game.hintIds = [];
+  game.hintRevealCount = 0;
   setStatusFor([id], 'selected');
   selectedIds = [...selectedIds, id];
 
   tryValidateSelection();
+}
+
+export function devSkipToEnd(): void {
+  if (!game.gameActive) return;
+  game.deck = [];
+  game.board = [];
+  selectedIds = [];
+  game.animating = false;
+  endGame();
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { game, openMenu, closeMenu, devAutoMatch, devSkipToEnd, useHint } from '../lib/state.svelte';
+  import { game, openMenu, closeMenu, devSkipToEnd, useHint } from '../lib/state.svelte';
   import { formatTime } from '../lib/game';
   import Toast from './Toast.svelte';
 
@@ -17,7 +17,6 @@
   <div class="toast-wrapper"><Toast /></div>
   <div class="header-group">
     {#if isDev}
-      <button class="dev-btn" title="Auto-match a set" onclick={devAutoMatch}>▶</button>
       <button class="dev-btn" title="Skip to end" onclick={devSkipToEnd}>⏭</button>
     {/if}
     {#if game.gameActive}
