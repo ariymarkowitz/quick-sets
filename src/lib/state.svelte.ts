@@ -343,7 +343,6 @@ $effect.root(() => {
     return () => document.removeEventListener('visibilitychange', onChange);
   });
 
-  // ModePersist — external storage write.
   $effect(() => setMode(game.mode));
 
   // CardsExiting — when `cardsShown` flips false while cards are mounted,
@@ -430,15 +429,15 @@ export async function newGame(): Promise<void> {
   ensureBoardHasSet(game.deck, BOARD_SIZE);
   dealFreshBoard();
 
+  game.gameStartTime = Date.now();
   game.phase = { kind: 'playing' };
   // Phase change closes the modal intent; clear the handshake flag and
   // trigger the initial staggered deal-in.
   game.modalClosing = false;
   // PausePeriod effect cleanup fires after this tick, adding the old pause
-  // duration to pauseAccumulated. Reset both after effects flush.
+  // duration to pauseAccumulated. Reset it once effects have flushed.
   await tick();
   game.pauseAccumulated = 0;
-  game.gameStartTime = Date.now();
 }
 
 export function openMenu(): void {
