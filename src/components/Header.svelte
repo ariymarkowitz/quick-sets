@@ -8,7 +8,7 @@
 
 <header>
   <div class="header-group">
-    <span id="timer">{formatTime(game.elapsed)}</span>
+    <span id="timer">{formatTime(game.timer.sample)}</span>
     <span id="deck-count">
       <span class="header-icon" aria-hidden="true"></span>
       <span id="deck-count-num">{game.deck.length}</span>

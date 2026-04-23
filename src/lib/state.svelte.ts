@@ -1,7 +1,8 @@
-import { untrack, tick } from 'svelte';
+import { untrack } from 'svelte';
 import { generateDeck, shuffle, isValidSet, hasSet, findSet, type Card } from './game.js';
 import { saveScore as persistScore, getScores, getMode, setMode } from './storage.js';
 import { INITIAL_BOARD as BOARD_SIZE, MIN_BOARD, DEAL_SETTLE_MS, TOAST_MS, MODE_TIMINGS, VICTORY_MESSAGES } from './constants.js';
+import { createTimer, type Timer } from './timer.svelte.js';
 
 export type EntryTransition =
   | null
@@ -59,9 +60,7 @@ class GameState {
   resolution: Resolution = $state(null);
 
   // Timing
-  gameStartTime: number = $state(0);
-  pauseAccumulated: number = $state(0);
-  elapsed: number = $state(0);
+  timer: Timer = $state(createTimer(() => this.timePaused));
 
   // Phase
   phase: Phase = $state({ kind: 'intro' });
@@ -86,6 +85,7 @@ class GameState {
   // clicks/hints don't fire during pause or over/intro.
   running = $derived(this.phase.kind === 'playing');
   paused = $derived(this.phase.kind === 'pausedMenu' || this.phase.kind === 'pausedTab');
+  timePaused = $derived(this.paused || this.phase.kind === 'intro' || this.phase.kind === 'over');
   menuOpen = $derived(this.phase.kind === 'intro' || this.phase.kind === 'pausedMenu');
   gameOver = $derived<GameOverInfo | null>(this.phase.kind === 'over' ? this.phase.info : null);
   modalOpen = $derived(
@@ -214,7 +214,7 @@ function dealFreshBoard(): void {
 }
 
 function endGame(): void {
-  const elapsedValue = game.elapsed;
+  const elapsedValue = game.timer.sample;
   const title = VICTORY_MESSAGES[Math.floor(Math.random() * VICTORY_MESSAGES.length)]!;
   const disqualified = game.hintsUsed;
   const scores = disqualified ? getScores() : persistScore(elapsedValue);
@@ -243,26 +243,6 @@ export function onModalClosed(): void {
 $effect.root(() => {
   game.scores = getScores();
   game.mode = getMode();
-
-  // TimerTick — run while playing; sample Date.now on interval.
-  $effect(() => {
-    if (game.phase.kind !== 'playing') return;
-    const id = setInterval(() => {
-      game.elapsed = Math.floor((Date.now() - game.gameStartTime - game.pauseAccumulated) / 1000);
-    }, 1000);
-    return () => clearInterval(id);
-  });
-
-  // PausePeriod — a pause period exists exactly while `paused` is true.
-  // Start captured on mount; duration applied on cleanup. No manual
-  // gameStartTime adjustments elsewhere.
-  $effect(() => {
-    if (!game.paused) return;
-    const start = Date.now();
-    return () => {
-      game.pauseAccumulated += Date.now() - start;
-    };
-  });
 
   // Resolution — unified flash→remove→deal state machine. One effect,
   // one cleanup, one timer at a time. Each stage transition re-runs the
@@ -393,7 +373,7 @@ export function handleCardClick(id: number): void {
 }
 
 export function useHint(): void {
-  if (!game.running || game.resolution) return;
+  if (!game.running || game.resolution?.stage === 'flash') return;
 
   game.hintsUsed = true;
 
@@ -420,19 +400,13 @@ export async function newGame(): Promise<void> {
   game.hintsUsed = false;
   game.resolution = null;
   game.toast = '';
-  game.elapsed = 0;
+  game.timer = createTimer(() => game.paused);
 
   game.deck = generateDeck();
   ensureBoardHasSet(game.deck, BOARD_SIZE);
   dealFreshBoard();
 
-  game.gameStartTime = Date.now();
   game.phase = { kind: 'playing' };
-
-  // PausePeriod effect cleanup fires after this tick, adding the old pause
-  // duration to pauseAccumulated. Reset it once effects have flushed.
-  await tick();
-  game.pauseAccumulated = 0;
 }
 
 export function openMenu(): void {
