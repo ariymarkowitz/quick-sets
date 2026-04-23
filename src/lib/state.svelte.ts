@@ -1,6 +1,6 @@
 import { generateDeck, shuffle, isValidSet, hasSet, findSet, type Card } from './game.js';
 import { saveScore as persistScore, getScores, getMode, setMode } from './storage.js';
-import { INITIAL_BOARD, MIN_BOARD, DEAL_SETTLE_MS, TOAST_MS, MODE_TIMINGS, VICTORY_MESSAGES } from './constants.js';
+import { INITIAL_BOARD as BOARD_SIZE, MIN_BOARD, DEAL_SETTLE_MS, TOAST_MS, MODE_TIMINGS, VICTORY_MESSAGES } from './constants.js';
 
 export type EntryStatus =
   | null
@@ -103,6 +103,36 @@ $effect.root(() => {
   return () => document.removeEventListener('visibilitychange', onVisibilityChange);
 });
 
+function staggerDealDelays(entries: BoardEntry[]): void {
+  entries.forEach((entry, i) => { entry.dealDelay = i * game.animSettings.stagger; });
+}
+
+function staggerRemoveDelays(entries: BoardEntry[], stagger = game.animSettings.stagger): void {
+  entries.forEach((entry, i) => { entry.removeDelay = i * stagger; });
+}
+
+function totalRemoveDuration(n: number, stagger = game.animSettings.stagger): number {
+  return n * stagger + game.animSettings.removeDuration;
+}
+
+function scheduleDealClears(entries: BoardEntry[]): void {
+  if (entries.length === 0) return;
+  const ids = new Set(entries.map(e => e.id));
+  const lastDelay = Math.max(...entries.map(e => e.dealDelay));
+  setTimeout(() => {
+    for (const e of game.board) {
+      if (ids.has(e.id) && e.status === 'dealing') e.status = null;
+    }
+  }, lastDelay + game.animSettings.dealDuration);
+}
+
+function ensureBoardHasSet(cards: Card[], boardSize: number): void {
+  const n = Math.min(boardSize, cards.length);
+  while (!hasSet(cards.slice(cards.length - n))) {
+    shuffle(cards);
+  }
+}
+
 function setStatusFor(ids: number[], status: EntryStatus): void {
   for (const e of game.board) {
     if (ids.includes(e.id)) e.status = status;
@@ -131,6 +161,13 @@ function dealCards(n: number): BoardEntry[] {
   game.board.push(...newEntries);
   scheduleDealClears(newEntries);
   return newEntries;
+}
+
+function dealInExistingBoard(entries: BoardEntry[]): void {
+  for (const e of entries) e.status = 'dealing';
+  staggerDealDelays(entries);
+  scheduleDealClears(entries);
+  game.cardsVisible = true;
 }
 
 function tryValidateSelection(): void {
@@ -204,7 +241,7 @@ function reshuffleAndDeal(): void {
     ...game.activeEntries.map(e => e.card).filter((c): c is Card => c !== null),
     ...game.deck,
   ];
-  ensureBoardHasSet(combined, INITIAL_BOARD);
+  ensureBoardHasSet(combined, BOARD_SIZE);
   game.deck = combined;
 
   // Stagger the exits: set removeDelay then mark all as removing in the same tick
@@ -215,7 +252,7 @@ function reshuffleAndDeal(): void {
 
   setTimeout(() => {
     game.board = [];
-    dealCards(INITIAL_BOARD);
+    dealCards(BOARD_SIZE);
     game.animating = false;
     setTimeout(checkGameState, game.animSettings.dealDuration);
   }, totalRemoveDuration(game.board.length));
@@ -246,6 +283,20 @@ function checkGameState(): void {
   reshuffleAndDeal();
 }
 
+function endGame(): void {
+  game.gameActive = false;
+
+  const elapsedValue = game.elapsed;
+  const title = VICTORY_MESSAGES[Math.floor(Math.random() * VICTORY_MESSAGES.length)]!;
+  const disqualified = game.hintsUsed;
+  const scores = disqualified ? getScores() : persistScore(elapsedValue);
+  const currentIdx = disqualified ? -1 : scores.indexOf(elapsedValue);
+  game.scores = scores;
+  hideCardsThenShowModal(() => {
+    game.gameOver = { title, time: elapsedValue, currentIdx, disqualified };
+  });
+}
+
 function hideCardsThenShowModal(prepareModal: () => void): void {
   staggerRemoveDelays(game.activeEntries, game.animSettings.fastStagger);
   for (const entry of game.activeEntries) entry.status = 'removing';
@@ -263,56 +314,12 @@ function hideModalThenRun(action: () => void): void {
   game.modalVisible = false;
 }
 
-function staggerDealDelays(entries: BoardEntry[]): void {
-  entries.forEach((entry, i) => { entry.dealDelay = i * game.animSettings.stagger; });
-}
-
-function staggerRemoveDelays(entries: BoardEntry[], stagger = game.animSettings.stagger): void {
-  entries.forEach((entry, i) => { entry.removeDelay = i * stagger; });
-}
-
-function totalRemoveDuration(n: number, stagger = game.animSettings.stagger): number {
-  return n * stagger + game.animSettings.removeDuration;
-}
-
-function scheduleDealClears(entries: BoardEntry[]): void {
-  if (entries.length === 0) return;
-  const ids = new Set(entries.map(e => e.id));
-  const lastDelay = Math.max(...entries.map(e => e.dealDelay));
-  setTimeout(() => {
-    for (const e of game.board) {
-      if (ids.has(e.id) && e.status === 'dealing') e.status = null;
-    }
-  }, lastDelay + game.animSettings.dealDuration);
-}
-
-function ensureBoardHasSet(cards: Card[], boardSize: number): void {
-  const n = Math.min(boardSize, cards.length);
-  while (!hasSet(cards.slice(cards.length - n))) {
-    shuffle(cards);
-  }
-}
-
-function endGame(): void {
-  game.gameActive = false;
-
-  const elapsedValue = game.elapsed;
-  const title = VICTORY_MESSAGES[Math.floor(Math.random() * VICTORY_MESSAGES.length)]!;
-  const disqualified = game.hintsUsed;
-  const scores = disqualified ? getScores() : persistScore(elapsedValue);
-  const currentIdx = disqualified ? -1 : scores.indexOf(elapsedValue);
-  game.scores = scores;
-  hideCardsThenShowModal(() => {
-    game.gameOver = { title, time: elapsedValue, currentIdx, disqualified };
-  });
-}
-
 function performNewGameSetup(): void {
   game.setsFound = 0;
   selectedIds = [];
   game.board = [];
   game.deck = generateDeck();
-  ensureBoardHasSet(game.deck, INITIAL_BOARD);
+  ensureBoardHasSet(game.deck, BOARD_SIZE);
   game.animating = false;
   game.gameActive = true;
   game.toast = '';
@@ -328,23 +335,10 @@ function performNewGameSetup(): void {
   gameStartTime = Date.now();
 }
 
-export function runPendingAction(): void {
-  const a = game.pendingAction;
-  game.pendingAction = null;
-  a?.();
-}
-
-function dealInExistingBoard(entries: BoardEntry[]): void {
-  for (const e of entries) e.status = 'dealing';
-  staggerDealDelays(entries);
-  scheduleDealClears(entries);
-  game.cardsVisible = true;
-}
-
 export function newGame(): void {
   hideModalThenRun(() => {
     performNewGameSetup();
-    dealCards(INITIAL_BOARD);
+    dealCards(BOARD_SIZE);
     game.cardsVisible = true;
     setTimeout(checkGameState, DEAL_SETTLE_MS);
   });
@@ -411,6 +405,12 @@ export function handleCardClick(id: number): void {
   selectedIds = [...selectedIds, id];
 
   tryValidateSelection();
+}
+
+export function runPendingAction(): void {
+  const a = game.pendingAction;
+  game.pendingAction = null;
+  a?.();
 }
 
 export function devSkipToEnd(): void {
