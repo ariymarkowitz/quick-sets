@@ -373,7 +373,7 @@ export function handleCardClick(id: number): void {
 }
 
 export function useHint(): void {
-  if (!game.running || game.resolution?.stage === 'flash') return;
+  if (!game.running || game.resolution) return;
 
   game.hintsUsed = true;
 
@@ -400,7 +400,7 @@ export async function newGame(): Promise<void> {
   game.hintsUsed = false;
   game.resolution = null;
   game.toast = '';
-  game.timer = createTimer(() => game.paused);
+  game.timer = createTimer(() => game.timePaused);
 
   game.deck = generateDeck();
   ensureBoardHasSet(game.deck, BOARD_SIZE);
