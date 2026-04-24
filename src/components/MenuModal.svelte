@@ -1,8 +1,14 @@
 <script lang="ts">
-  import { game, newGame, closeMenu, onModalClosed } from '../lib/state.svelte';
+  import { app } from '../lib/app-state.svelte';
   import { formatTime } from '../lib/game';
   import { getTheme, toggleTheme, type Theme } from '../lib/storage';
   import Modal from './Modal.svelte';
+
+  let { newGame, closeMenu, onModalClosed }: {
+    newGame: () => Promise<void>;
+    closeMenu: () => Promise<void>;
+    onModalClosed: () => void;
+  } = $props();
 
   type View = 'main' | 'help' | 'leaderboard';
   let view: View = $state('main');
@@ -18,7 +24,7 @@
   }
 </script>
 
-<Modal open={game.modalVisible && game.menuOpen} onclose={onClose}>
+<Modal open={app.modalVisible && app.menuOpen} onclose={onClose}>
   {#if view === 'main'}
     <h2 id="modal-title">Quick Sets</h2>
 
@@ -27,14 +33,14 @@
         <button
           type="button"
           class="segmented-btn"
-          class:active={game.mode === 'chill'}
-          onclick={() => (game.mode = 'chill')}
+          class:active={app.mode === 'chill'}
+          onclick={() => (app.mode = 'chill')}
         ><span class="mode-icon tortoise-icon"></span>Chill</button>
         <button
           type="button"
           class="segmented-btn"
-          class:active={game.mode === 'speedy'}
-          onclick={() => (game.mode = 'speedy')}
+          class:active={app.mode === 'speedy'}
+          onclick={() => (app.mode = 'speedy')}
         ><span class="mode-icon rabbit-icon"></span>Speedy</button>
       </div>
       <button
@@ -52,9 +58,9 @@
     </div>
 
     <button id="play-again-btn" onclick={newGame}>
-      {game.gameActive ? 'Restart' : 'Start'}
+      {app.gameActive ? 'Restart' : 'Start'}
     </button>
-    {#if game.gameActive}
+    {#if app.gameActive}
       <button class="menu-btn resume-btn" onclick={closeMenu}>Resume</button>
     {/if}
   {:else if view === 'help'}
@@ -72,11 +78,11 @@
     <button id="play-again-btn" onclick={() => (view = 'main')}>Back</button>
   {:else if view === 'leaderboard'}
     <h2 id="modal-title">Top Times</h2>
-    {#if game.scores.length === 0}
+    {#if app.scores.length === 0}
       <p class="empty-scores">No times yet — finish a game to set a record.</p>
     {:else}
       <ol id="leaderboard-list">
-        {#each game.scores as s, i}
+        {#each app.scores as s, i}
           <li>{i + 1}. {formatTime(s)}</li>
         {/each}
       </ol>

@@ -1,5 +1,5 @@
 export type Theme = 'light' | 'dark';
-import type { GameMode } from './state.svelte.js';
+import type { GameMode } from './game-state.svelte.js';
 
 const THEME_KEY = 'set-game-theme';
 const SCORES_KEY = 'set-game-scores';

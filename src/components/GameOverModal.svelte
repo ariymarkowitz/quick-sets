@@ -1,23 +1,28 @@
 <script lang="ts">
-  import { game, newGame, onModalClosed } from '../lib/state.svelte';
+  import { app } from '../lib/app-state.svelte';
   import { formatTime } from '../lib/game';
   import Modal from './Modal.svelte';
+
+  let { newGame, onModalClosed }: {
+    newGame: () => Promise<void>;
+    onModalClosed: () => void;
+  } = $props();
 
   function onClose() {
     onModalClosed();
   }
 </script>
 
-<Modal open={game.modalVisible && !!game.gameOver} onclose={onClose}>
-  <h2 id="modal-title">{game.gameOver?.title}</h2>
-  <p id="final-time-display">{formatTime(game.gameOver?.time ?? 0)}</p>
-  {#if game.gameOver?.disqualified}
+<Modal open={app.modalVisible && !!app.gameOver} onclose={onClose}>
+  <h2 id="modal-title">{app.gameOver?.title}</h2>
+  <p id="final-time-display">{formatTime(app.gameOver?.time ?? 0)}</p>
+  {#if app.gameOver?.disqualified}
     <p class="disqualified-note">Hint used — time not saved to leaderboard</p>
   {/if}
   <h3>Top Times</h3>
   <ol id="leaderboard-list">
-    {#each game.scores as s, i}
-      <li class:current-score={i === game.gameOver?.currentIdx}>
+    {#each app.scores as s, i}
+      <li class:current-score={i === app.gameOver?.currentIdx}>
         {i + 1}. {formatTime(s)}
       </li>
     {/each}

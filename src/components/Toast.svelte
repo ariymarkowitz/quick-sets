@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { game } from '../lib/state.svelte';
+  import { app } from '../lib/app-state.svelte';
+  
+  const toast = $derived(app.game?.toast ?? '')
 </script>
 
-<div id="message-toast" class:hidden={!game.toast}>{game.toast}</div>
+<div id="message-toast" class:hidden={!toast}>{toast}</div>
 
 <style>
   #message-toast {

@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { game, handleCardClick } from '../lib/state.svelte';
+  import { app } from '../lib/app-state.svelte';
   import Card from './Card.svelte';
 
-  const isChill = $derived(game.mode === 'chill');
+  const isChill = $derived(app.mode === 'chill');
 </script>
 
 <main id="card-grid">
-  {#if game.cardsMounted}
-    {#each game.board as entry (entry.id)}
+  {#if app.cardsMounted}
+    {#each app.game?.board ?? [] as entry (entry.id)}
       <!--
         .card-slot is a persistent grid cell that never transitions out.
         The inner {#if} controls whether the card content is shown.
@@ -15,7 +15,7 @@
       -->
       <div class="card-slot">
         {#if entry.card !== null}
-          {@const v = game.cardStatus(entry)}
+          {@const v = app.game?.cardStatus(entry) ?? { transition: null, highlight: null }}
           <div
             class="card-inner"
             class:dealing={v.transition?.type === 'dealing'}
@@ -27,7 +27,7 @@
               card={entry.card}
               status={v.transition}
               highlight={v.highlight}
-              onclick={() => handleCardClick(entry.id)}
+              onclick={() => app.game?.handleCardClick(entry.id)}
             />
           </div>
         {/if}

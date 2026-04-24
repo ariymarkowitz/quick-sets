@@ -1,26 +1,31 @@
 <script lang="ts">
-  import { game, openMenu, closeMenu, devSkipToEnd, useHint } from '../lib/state.svelte';
+  import { app } from '../lib/app-state.svelte';
   import { formatTime } from '../lib/game';
   import Toast from './Toast.svelte';
+
+  let { openMenu, closeMenu }: {
+    openMenu: () => void;
+    closeMenu: () => Promise<void>;
+  } = $props();
 
   const isDev = import.meta.env.DEV;
 </script>
 
 <header>
   <div class="header-group">
-    <span id="timer">{formatTime(game.timer.sample)}</span>
+    <span id="timer">{formatTime(app.game?.timer.sample ?? 0)}</span>
     <span id="deck-count">
       <span class="header-icon" aria-hidden="true"></span>
-      <span id="deck-count-num">{game.deck.length}</span>
+      <span id="deck-count-num">{app.game?.deck.length ?? 0}</span>
     </span>
   </div>
   <div class="toast-wrapper"><Toast /></div>
-  <div class="header-group" class:hidden={!game.gameActive}>
+  <div class="header-group" class:hidden={!app.gameActive}>
       {#if isDev}
-        <button id="skip-btn" title="Skip to end" onclick={devSkipToEnd}></button>
+        <button id="skip-btn" title="Skip to end" onclick={() => app.game?.devSkipToEnd()}></button>
       {/if}
-      <button id="hint-btn" aria-label="Hint" title="Hint (disables leaderboard)" onclick={useHint}></button>
-      <button id="pause-btn" aria-label={game.menuOpen ? 'Resume' : 'Pause'} title={game.menuOpen ? 'Resume' : 'Pause'} onclick={game.menuOpen ? closeMenu : openMenu}></button>
+      <button id="hint-btn" aria-label="Hint" title="Hint (disables leaderboard)" onclick={() => app.game?.useHint()}></button>
+      <button id="pause-btn" aria-label={app.menuOpen ? 'Resume' : 'Pause'} title={app.menuOpen ? 'Resume' : 'Pause'} onclick={app.menuOpen ? closeMenu : openMenu}></button>
   </div>
 </header>
 
