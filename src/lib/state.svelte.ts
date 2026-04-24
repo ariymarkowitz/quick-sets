@@ -206,6 +206,7 @@ function topUp(target: number): void {
     ids.push(e.id);
   }
   if (ids.length > 0) game.resolution = { stage: 'dealing', ids };
+  else game.resolution = null;
 }
 
 function dealFreshBoard(): void {
