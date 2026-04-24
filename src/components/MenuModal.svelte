@@ -24,7 +24,7 @@
   }
 </script>
 
-<Modal open={app.modalVisible && app.menuOpen} onclose={onClose}>
+<Modal open={app.modalVisible && app.menuOpen} {onClose}>
   {#if view === 'main'}
     <h2 id="modal-title">Quick Sets</h2>
 

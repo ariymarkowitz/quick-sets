@@ -13,7 +13,7 @@
   }
 </script>
 
-<Modal open={app.modalVisible && !!app.gameOver} onclose={onClose}>
+<Modal open={app.modalVisible && !!app.gameOver} {onClose}>
   <h2 id="modal-title">{app.gameOver?.title}</h2>
   <p id="final-time-display">{formatTime(app.gameOver?.time ?? 0)}</p>
   {#if app.gameOver?.disqualified}

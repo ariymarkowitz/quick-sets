@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
-  let { open, onclose, children }: {
+  let { open, onClose, children }: {
     open: boolean;
-    onclose?: () => void;
+    onClose?: () => void;
     children: Snippet;
   } = $props();
 
@@ -23,7 +23,7 @@
     if (closing) {
       visible = false;
       closing = false;
-      onclose?.();
+      onClose?.();
     }
   }
 </script>
