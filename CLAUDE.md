@@ -7,11 +7,11 @@ Quick Sets — browser-based single-player SET card game. Svelte 5 + Vite + Type
 - `npm run dev` / `build` / `preview` / `check` / `deploy`
 - No test suite or linter.
 
-## Guidelines
+## Reactive architecture
 
-Prefer reusable components. Use Svelte 5 runes (not stores); prefer derived state and effects over cached values, especially with nested reactive structures.
+Before writing or restructuring reactive code ($state/$derived/$effect, classes that own effects, cross-component lifecycles), read [agent/reactive-architecture.md](agent/reactive-architecture.md). Core idea: scopes own lifetime, effects are transient attachments; prefer `$derived` over effect-that-assigns; effects that set up external resources must return cleanup; reactive modules (classes or factory functions with effects) take getter props.
 
-## Architecture
+## Project architecture
 
 [src/App.svelte](src/App.svelte) composes `Header`, `CardGrid`, `GameOverModal`, `MenuModal`, `SvgDefs`, `Toast`.
 
