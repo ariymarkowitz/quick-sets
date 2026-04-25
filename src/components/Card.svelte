@@ -3,7 +3,7 @@
     CARD_W, CARD_H, SHAPE_W, SHAPE_PAD_X, SHAPE_SCALE,
     SHAPE_DATA, SHAPE_SLOT_H,
   } from '../lib/constants';
-  import { app } from '../lib/app-state.svelte';
+  import { app } from '../lib/AppState.svelte';
   import type { Highlight } from '../lib/Game.svelte';
   import type { Card } from '../lib/game-utils';
 

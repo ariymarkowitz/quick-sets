@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app } from '../lib/app-state.svelte';
+  import { app } from '../lib/AppState.svelte';
   import Card from './Card.svelte';
 
   let { onCardsExited }: { onCardsExited: () => void } = $props();

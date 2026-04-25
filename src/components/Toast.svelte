@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app } from '../lib/app-state.svelte';
+  import { app } from '../lib/AppState.svelte';
   
   const toast = $derived(app.game?.toast ?? '')
 </script>

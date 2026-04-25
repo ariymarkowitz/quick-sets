@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app } from '../lib/app-state.svelte';
+  import { app } from '../lib/AppState.svelte';
   import { formatTime } from '../lib/game-utils';
   import { getTheme, toggleTheme, type Theme } from '../lib/storage';
   import Modal from './Modal.svelte';
