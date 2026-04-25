@@ -8,13 +8,9 @@
     onModalOpened: () => void;
     onModalClosed: () => void;
   } = $props();
-
-  function onClose() {
-    onModalClosed();
-  }
 </script>
 
-<Modal open={app.modalVisible && !!app.gameOver} onOpen={onModalOpened} {onClose}>
+<Modal open={app.canShowModal && !!app.gameOver} onOpen={onModalOpened} onClose={onModalClosed}>
   <h2 id="modal-title">{app.gameOver?.title}</h2>
   <p id="final-time-display">{formatTime(app.gameOver?.time ?? 0)}</p>
   {#if app.gameOver?.disqualified}

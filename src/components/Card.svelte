@@ -4,12 +4,11 @@
     SHAPE_DATA, SHAPE_SLOT_H,
   } from '../lib/constants';
   import { app } from '../lib/app-state.svelte';
-  import type { EntryTransition, Highlight } from '../lib/game-state.svelte';
+  import type { Highlight } from '../lib/game-state.svelte';
   import type { Card } from '../lib/game';
 
   type Props = {
     card: Card;
-    status: EntryTransition;
     highlight: Highlight;
     onclick: () => void;
   };

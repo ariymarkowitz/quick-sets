@@ -31,7 +31,6 @@ export type GameMode = 'chill' | 'speedy';
 
 export type AnimSettings = typeof MODE_TIMINGS[GameMode];
 
-// Discriminated union driving the flash → remove → deal pipeline.
 type Resolution =
   | null
   | { stage: 'flash'; ids: number[]; valid: boolean }
@@ -64,10 +63,8 @@ export class Game {
   // Pipeline
   resolution: Resolution = $state(null);
 
-  // Toast
   toast: string = $state('');
 
-  // Timer — constructed in the per-game $effect.root so its effects attach there
   timer = createTimer(() => this.#deps.getTimePaused());
 
   // --- Derived ---
@@ -79,9 +76,6 @@ export class Game {
   constructor(deps: GameDeps) {
     this.#deps = deps;
 
-    // Resolution pipeline: flash → remove → deal state machine.
-    // One effect, one cleanup, one timer at a time. Each stage transition
-    // re-runs the effect so the prior timeout is cleared via cleanup.
     $effect(() => {
       const r = this.resolution;
       if (!r) return;
@@ -129,14 +123,12 @@ export class Game {
       return () => clearTimeout(timerId);
     });
 
-    // Toast auto-dismiss
     $effect(() => {
       if (!this.toast) return;
       const id = setTimeout(() => { this.toast = ''; }, TOAST_MS);
       return () => clearTimeout(id);
     });
 
-    // Initial deal
     untrack(() => {
       this.deck = generateDeck();
       this.#ensureBoardHasSet(this.deck, BOARD_SIZE);
@@ -144,7 +136,6 @@ export class Game {
     });
   }
 
-  // Per-entry view. Replaces the mutated `entry.status` / delays.
   cardStatus(entry: BoardEntry): EntryStatus {
     const r = this.resolution;
     const animSettings = this.#deps.getAnimSettings();
@@ -175,8 +166,6 @@ export class Game {
     return { transition, highlight };
   }
 
-  // Trigger a re-deal animation for all currently active entries.
-  // Used by closeMenu (after pause) to animate cards back in.
   triggerResumeDeal(): void {
     this.resolution = { stage: 'dealing', ids: this.activeEntries.map(e => e.id) };
   }
@@ -264,8 +253,6 @@ export class Game {
     return { id: makeId(), card };
   }
 
-  // Called when the dealing stage completes. Decides whether to end the game,
-  // top up the board, reshuffle, or do nothing.
   #checkBoard(): void {
     if (!this.#deps.getRunning()) return;
 

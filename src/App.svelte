@@ -13,9 +13,7 @@
   app.scores = getScores();
   app.mode = getMode();
 
-  // Incrementing this will trigger a new game instance.
   let gameCounter = $state(0);
-  // True while the modal is visible or animating out. Driven by Modal lifecycle callbacks.
   let modalAnimating = $state(false);
 
   $effect(() => {

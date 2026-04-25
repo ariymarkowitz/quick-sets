@@ -36,7 +36,6 @@
           >
             <Card
               card={entry.card}
-              status={v.transition}
               highlight={v.highlight}
               onclick={() => app.game?.handleCardClick(entry.id)}
             />
