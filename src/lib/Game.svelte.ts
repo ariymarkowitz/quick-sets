@@ -39,7 +39,6 @@ type Resolution =
 
 export type GameDeps = {
   getRunning: () => boolean;
-  getTimePaused: () => boolean;
   getCardsExiting: () => boolean;
   getAnimSettings: () => AnimSettings;
   onEndGame: (result: { time: number; disqualified: boolean }) => void;
@@ -65,7 +64,7 @@ export class Game {
 
   toast: string = $state('');
 
-  timer = createTimer(() => this.#deps.getTimePaused());
+  timer = createTimer(() => !this.#deps.getRunning());
 
   // --- Derived ---
   activeEntries = $derived(this.board.filter(e => e.card !== null));

@@ -5,7 +5,7 @@
   import GameOverModal from './components/GameOverModal.svelte';
   import MenuModal from './components/MenuModal.svelte';
   import SvgDefs from './components/SvgDefs.svelte';
-  import { app } from './lib/app-state.svelte';
+  import { app } from './lib/AppState.svelte';
   import { Game } from './lib/Game.svelte';
   import { getScores, getMode, setMode, saveScore as persistScore } from './lib/storage';
   import { VICTORY_MESSAGES } from './lib/constants';
@@ -21,7 +21,6 @@
     if (counter === 0) return;
     app.game = new Game({
       getRunning: () => app.running,
-      getTimePaused: () => app.timePaused,
       getCardsExiting: () => app.cardsExiting,
       getAnimSettings: () => app.animSettings,
       onEndGame: ({ time, disqualified }) => {

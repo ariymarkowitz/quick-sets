@@ -26,7 +26,6 @@ class AppState {
   running = $derived(this.phase.kind === 'playing');
   paused = $derived(this.phase.kind === 'pausedMenu' || this.phase.kind === 'pausedTab');
   gameActive = $derived(this.running || this.paused);
-  timePaused = $derived(!this.running);
 
   menuOpen = $derived(this.phase.kind === 'intro' || this.phase.kind === 'pausedMenu');
   gameOver = $derived<GameOverInfo | null>(this.phase.kind === 'over' ? this.phase.info : null);
