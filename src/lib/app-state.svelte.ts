@@ -41,7 +41,7 @@ class AppState {
   );
   cardsShown = $derived(this.phase.kind === 'playing' || this.phase.kind === 'pausedTab');
   cardsMounted = $derived(this.cardsShown || this.cardsExiting);
-  modalVisible = $derived(this.modalOpen && this.pendingAction === null);
+  modalVisible = $derived(this.modalOpen && this.pendingAction === null && !this.cardsExiting);
 }
 
 export const app = new AppState();
