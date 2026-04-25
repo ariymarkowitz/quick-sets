@@ -1,6 +1,6 @@
 import { MODE_TIMINGS } from './constants.js';
-import type { Game } from './game-state.svelte.js';
-import type { GameMode, GameOverInfo, AnimSettings } from './game-state.svelte.js';
+import type { Game } from './Game.svelte.js';
+import type { GameMode, GameOverInfo, AnimSettings } from './Game.svelte.js';
 
 export type { GameMode, GameOverInfo, AnimSettings };
 

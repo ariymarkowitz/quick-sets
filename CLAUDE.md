@@ -15,7 +15,7 @@ Before writing or restructuring reactive code ($state/$derived/$effect, classes 
 
 [src/App.svelte](src/App.svelte) composes `Header`, `CardGrid`, `GameOverModal`, `MenuModal`, `SvgDefs`, `Toast`.
 
-**State** lives entirely in [src/lib/state.svelte.ts](src/lib/state.svelte.ts) as a `GameState` class instance (`game`) with `$state` fields. Components read reactively and call exported actions; they never mutate state directly. Actions: `newGame`, `handleCardClick`, `openMenu`, `closeMenu`, `useHint`, `devSkipToEnd`.
+**State** lives in [src/lib/app-state.svelte.ts](src/lib/app-state.svelte.ts) (app-level scope) and [src/lib/Game.svelte.ts](src/lib/Game.svelte.ts) (game-level scope). Components read reactively and call exported actions; they never mutate state directly. Actions: `newGame`, `handleCardClick`, `openMenu`, `closeMenu`, `useHint`, `devSkipToEnd`.
 
 Key invariants:
 - `BoardEntry { id, card }` holds persistent identity (monotonic `id`) decoupled from transient view state. Per-card view is computed by `game.cardStatus(entry)` returning `{ transition, highlight }` — `transition: null | { type: 'dealing' | 'removing', delay }`, `highlight: null | 'selected' | 'hint' | 'valid' | 'invalid'`. A `card: null` entry keeps layout when the deck is empty.
@@ -29,6 +29,6 @@ Key invariants:
 
 [MenuModal.svelte](src/components/MenuModal.svelte) — multi-view modal (main/help/leaderboard), wraps [Modal.svelte](src/components/Modal.svelte) (animated primitive, `open` prop, fires `onclose` after exit animation).
 
-Other modules: [game.ts](src/lib/game.ts) — pure logic (`isValidSet`, `hasSet`, `findSet`, `formatTime`). [constants.ts](src/lib/constants.ts) — timings, board sizes, `MODE_TIMINGS`, SVG paths/colors. [storage.ts](src/lib/storage.ts) — localStorage for top-5 scores, theme, mode.
+Other modules: [game-utils.ts](src/lib/game.ts) — pure logic (`isValidSet`, `hasSet`, `findSet`, `formatTime`). [constants.ts](src/lib/constants.ts) — timings, board sizes, `MODE_TIMINGS`, SVG paths/colors. [storage.ts](src/lib/storage.ts) — localStorage for top-5 scores, theme, mode.
 
 Card visuals: SVG `<symbol>` defs in [SvgDefs.svelte](src/components/SvgDefs.svelte), `<use>`-referenced from [Card.svelte](src/components/Card.svelte); striped fills via `<pattern>` defs keyed by color.

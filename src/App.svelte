@@ -6,7 +6,7 @@
   import MenuModal from './components/MenuModal.svelte';
   import SvgDefs from './components/SvgDefs.svelte';
   import { app } from './lib/app-state.svelte';
-  import { Game } from './lib/game-state.svelte';
+  import { Game } from './lib/Game.svelte';
   import { getScores, getMode, setMode, saveScore as persistScore } from './lib/storage';
   import { VICTORY_MESSAGES } from './lib/constants';
 

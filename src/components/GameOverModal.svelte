@@ -1,6 +1,6 @@
 <script lang="ts">
   import { app } from '../lib/app-state.svelte';
-  import { formatTime } from '../lib/game';
+  import { formatTime } from '../lib/game-utils';
   import Modal from './Modal.svelte';
 
   let { newGame, onModalOpened, onModalClosed }: {

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { app } from '../lib/app-state.svelte';
-  import { formatTime } from '../lib/game';
+  import { formatTime } from '../lib/game-utils';
   import { getTheme, toggleTheme, type Theme } from '../lib/storage';
   import Modal from './Modal.svelte';
 

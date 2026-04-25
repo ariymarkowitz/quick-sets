@@ -1,5 +1,5 @@
 import { untrack } from 'svelte';
-import { generateDeck, shuffle, isValidSet, hasSet, findSet, type Card } from './game.js';
+import { generateDeck, shuffle, isValidSet, hasSet, findSet, type Card } from './game-utils.js';
 import { INITIAL_BOARD as BOARD_SIZE, MIN_BOARD, DEAL_SETTLE_MS, TOAST_MS, MODE_TIMINGS } from './constants.js';
 import { createTimer } from './timer.svelte.js';
 
