@@ -15,7 +15,7 @@ export type BoardEntry = {
   card: Card | null;
 };
 
-export type EntryView = {
+export type EntryStatus = {
   transition: EntryTransition;
   highlight: Highlight;
 };
@@ -41,7 +41,7 @@ type Resolution =
 export type GameDeps = {
   getRunning: () => boolean;
   getTimePaused: () => boolean;
-  getViewTransition: () => 'cardsExiting' | 'modalExiting' | null;
+  getCardsExiting: () => boolean;
   getAnimSettings: () => AnimSettings;
   onEndGame: (result: { time: number; disqualified: boolean }) => void;
 };
@@ -145,16 +145,16 @@ export class Game {
   }
 
   // Per-entry view. Replaces the mutated `entry.status` / delays.
-  cardStatus(entry: BoardEntry): EntryView {
+  cardStatus(entry: BoardEntry): EntryStatus {
     const r = this.resolution;
     const animSettings = this.#deps.getAnimSettings();
-    const viewTransition = this.#deps.getViewTransition();
+    const cardsExiting = this.#deps.getCardsExiting();
     let transition: EntryTransition = null;
     let highlight: Highlight = null;
 
     const rId = r?.ids.indexOf(entry.id) ?? -1;
 
-    if (viewTransition === 'cardsExiting') {
+    if (cardsExiting) {
       const idx = this.activeEntries.findIndex(e => e.id === entry.id);
       const removeDelay = Math.max(0, idx * animSettings.fastStagger);
       transition = { type: 'removing', delay: removeDelay };

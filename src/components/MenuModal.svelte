@@ -5,8 +5,8 @@
   import Modal from './Modal.svelte';
 
   let { newGame, closeMenu, onModalClosed }: {
-    newGame: () => Promise<void>;
-    closeMenu: () => Promise<void>;
+    newGame: () => void;
+    closeMenu: () => void;
     onModalClosed: () => void;
   } = $props();
 

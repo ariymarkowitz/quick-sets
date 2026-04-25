@@ -2,17 +2,27 @@
   import { app } from '../lib/app-state.svelte';
   import Card from './Card.svelte';
 
+  let { onCardsExited }: { onCardsExited: () => void } = $props();
+
   const isChill = $derived(app.mode === 'chill');
+
+  // Count exit-animation completions during cardsExiting.
+  let exitedCount = 0;
+  $effect(() => {
+    if (!app.cardsExiting) exitedCount = 0;
+  });
+
+  function handleAnimationEnd() {
+    if (!app.cardsExiting) return;
+    exitedCount++;
+    const total = app.game?.activeEntries.length ?? 0;
+    if (exitedCount >= total) onCardsExited();
+  }
 </script>
 
 <main id="card-grid">
   {#if app.cardsMounted}
     {#each app.game?.board ?? [] as entry (entry.id)}
-      <!--
-        .card-slot is a persistent grid cell that never transitions out.
-        The inner {#if} controls whether the card content is shown.
-        'dealing' and 'removing' keep the card mounted so CSS animations run.
-      -->
       <div class="card-slot">
         {#if entry.card !== null}
           {@const v = app.game?.cardStatus(entry) ?? { transition: null, highlight: null }}
@@ -22,6 +32,7 @@
             class:removing={v.transition?.type === 'removing'}
             class:chill={isChill}
             style="--delay:{v.transition?.delay}ms"
+            onanimationend={handleAnimationEnd}
           >
             <Card
               card={entry.card}

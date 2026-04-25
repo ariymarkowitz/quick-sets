@@ -23,7 +23,7 @@ Key invariants:
 - `resolution: Resolution` is a discriminated union (`null | flash | removing | dealing`) driving the flash → remove → deal pipeline. A single `$effect` watches `resolution`, schedules one timeout per stage, and transitions. `animating` is derived from `resolution !== null` and gates user input.
 - Hints: each `useHint()` call increments `hintRevealed` up to `hintIds.length`. Any click clears the preview. Using hints sets `hintsUsed`, disqualifying the score.
 - `checkBoard()` runs after dealing: tops up to `MIN_BOARD`, reshuffles via `refresh()` when no set exists on board, ends the game when board ∪ deck has no set.
-- `viewTransition: 'cardsExiting' | 'modalExiting' | null` coordinates modal ↔ cards handoff. `closeModal()` awaits a Promise resolved by `onModalClosed()` (fired by Modal when its exit animation ends).
+- Transitions are state-driven: child owns the animation and fires a done callback; parent never times the child. (1) `pendingAction: 'newGame' | 'resumePlay' | null` drives modal exit — hides modal via `modalVisible`; Modal fires `onclose` after exit animation, then `onModalClosed` commits. (2) `cardsExiting: boolean` is the card-grid analogue — App sets it, CardGrid counts `animationend`s and fires `onCardsExited`.
 - Tab-visibility auto-pauses via the `pausedTab` phase. Timer lives in [timer.svelte.ts](src/lib/timer.svelte.ts); `timePaused` is derived and passed in so the timer pauses for intro/over/paused phases.
 - `animSettings` is `$derived` from `MODE_TIMINGS[mode]` — all timings change with `'chill'`/`'speedy'` mode.
 

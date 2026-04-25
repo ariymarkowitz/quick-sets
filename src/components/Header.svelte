@@ -5,7 +5,7 @@
 
   let { openMenu, closeMenu }: {
     openMenu: () => void;
-    closeMenu: () => Promise<void>;
+    closeMenu: () => void;
   } = $props();
 
   const isDev = import.meta.env.DEV;

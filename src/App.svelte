@@ -13,24 +13,7 @@
   app.scores = getScores();
   app.mode = getMode();
 
-  // Modal close handshake: closeModal sets viewTransition='modalExiting' and
-  // returns a promise resolved by the Modal's onclose callback (fired after
-  // its exit animation ends). Shape is constrained by Modal.svelte's API.
-  let closeResolver: (() => void) | null = null;
-  function closeModal(): Promise<void> {
-    if (!app.modalOpen) return Promise.resolve();
-    app.viewTransition = 'modalExiting';
-    return new Promise(res => { closeResolver = res; });
-  }
-  function onModalClosed(): void {
-    const r = closeResolver;
-    closeResolver = null;
-    r?.();
-  }
-
-  // Per-game lifecycle. The keyed effect owns the Game: when gameCounter
-  // flips, its cleanup cascades through Game's internal $effects (resolution
-  // timeout, toast timeout, timer interval), and a fresh Game is built.
+  // Incrementing this will trigger a new game instance.
   let gameCounter = $state(0);
 
   $effect(() => {
@@ -39,7 +22,7 @@
     app.game = new Game({
       getRunning: () => app.running,
       getTimePaused: () => app.timePaused,
-      getViewTransition: () => app.viewTransition,
+      getCardsExiting: () => app.cardsExiting,
       getAnimSettings: () => app.animSettings,
       onEndGame: ({ time, disqualified }) => {
         const title = VICTORY_MESSAGES[Math.floor(Math.random() * VICTORY_MESSAGES.length)]!;
@@ -52,10 +35,8 @@
     return () => { app.game = null; };
   });
 
-  async function newGame(): Promise<void> {
-    await closeModal();
-    gameCounter++;
-    app.phase = { kind: 'playing' };
+  function newGame(): void {
+    if (app.pendingAction === null) app.pendingAction = 'newGame';
   }
 
   function openMenu(): void {
@@ -64,11 +45,26 @@
     }
   }
 
-  async function closeMenu(): Promise<void> {
-    if (app.phase.kind !== 'pausedMenu' || app.viewTransition !== null) return;
-    await closeModal();
-    app.phase = { kind: 'playing' };
-    app.game?.triggerResumeDeal();
+  function closeMenu(): void {
+    if (app.phase.kind === 'pausedMenu' && app.pendingAction === null) {
+      app.pendingAction = 'resumePlay';
+    }
+  }
+
+  function onModalClosed(): void {
+    const action = app.pendingAction;
+    app.pendingAction = null;
+    if (action === 'newGame') {
+      gameCounter++;
+      app.phase = { kind: 'playing' };
+    } else if (action === 'resumePlay') {
+      app.phase = { kind: 'playing' };
+      app.game?.triggerResumeDeal();
+    }
+  }
+
+  function onCardsExited(): void {
+    app.cardsExiting = false;
   }
 
   $effect(() => setMode(app.mode));
@@ -86,28 +82,11 @@
   });
 
   $effect.pre(() => {
-    if (!app.modalOpen && app.viewTransition === 'modalExiting') {
-      app.viewTransition = null;
-    }
-  });
-
-  $effect.pre(() => {
     if (app.cardsShown) return;
-    const { count, duration } = untrack(() => {
-      const count = app.game?.activeEntries.length ?? 0;
-      const { fastStagger, removeDuration } = app.animSettings;
-      return {
-        count,
-        duration: Math.max(0, count - 1) * fastStagger + removeDuration,
-      };
-    });
+    const count = untrack(() => app.game?.activeEntries.length ?? 0);
     if (count === 0) return;
-    app.viewTransition = 'cardsExiting';
-    const id = setTimeout(() => { app.viewTransition = null; }, duration);
-    return () => {
-      clearTimeout(id);
-      app.viewTransition = null;
-    };
+    app.cardsExiting = true;
+    return () => { app.cardsExiting = false; };
   });
 
   $effect(() => {
@@ -121,7 +100,7 @@
 <SvgDefs />
 <div id="game">
   <Header {openMenu} {closeMenu} />
-  <CardGrid />
+  <CardGrid {onCardsExited} />
   <GameOverModal {newGame} {onModalClosed} />
   <MenuModal {newGame} {closeMenu} {onModalClosed} />
 </div>

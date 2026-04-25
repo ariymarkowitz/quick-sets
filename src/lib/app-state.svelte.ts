@@ -11,11 +11,18 @@ export type Phase =
   | { kind: 'pausedTab' }
   | { kind: 'over'; info: GameOverInfo };
 
+export type PendingAction = 'newGame' | 'resumePlay';
+
 class AppState {
   phase: Phase = $state({ kind: 'intro' });
   mode: GameMode = $state('chill');
   scores: number[] = $state([]);
-  viewTransition: 'cardsExiting' | 'modalExiting' | null = $state(null);
+  // Set by user actions to begin a modal-out → phase-commit handshake.
+  // Cleared by App's onModalClosed once the Modal's exit animation ends.
+  pendingAction: PendingAction | null = $state(null);
+  // True while the card grid is animating out after phase leaves cardsShown.
+  // CardGrid clears it via onCardsExited once the last card's animationend lands.
+  cardsExiting: boolean = $state(false);
   game: Game | null = $state(null);
 
   animSettings: AnimSettings = $derived(MODE_TIMINGS[this.mode]);
@@ -33,8 +40,8 @@ class AppState {
     this.phase.kind === 'intro' || this.phase.kind === 'pausedMenu' || this.phase.kind === 'over'
   );
   cardsShown = $derived(this.phase.kind === 'playing' || this.phase.kind === 'pausedTab');
-  cardsMounted = $derived(this.cardsShown || this.viewTransition === 'cardsExiting');
-  modalVisible = $derived(this.modalOpen && this.viewTransition === null);
+  cardsMounted = $derived(this.cardsShown || this.cardsExiting);
+  modalVisible = $derived(this.modalOpen && this.pendingAction === null);
 }
 
 export const app = new AppState();
