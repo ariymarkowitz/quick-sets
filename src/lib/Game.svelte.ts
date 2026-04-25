@@ -79,18 +79,10 @@ export class Game {
       if (!r) return;
 
       const animSettings = this.#deps.getAnimSettings();
-      let d: number;
-      if (r.stage === 'flash') {
-        d = r.valid ? animSettings.validFlash : animSettings.invalidFlash;
-      } else if (r.stage === 'removing') {
-        d = this.#totalRemoveDuration(r.ids.length, r.stagger);
-      } else {
-        d = this.#totalDealDuration(r.ids.length) + DEAL_SETTLE_MS;
-      }
+      let timeoutId: number;
 
-      const timerId = setTimeout(() => {
-        if (r.stage === 'flash') {
-          if (r.valid) {
+      if (r.stage === 'flash' && r.valid) {
+        timeoutId = setTimeout(() => {
             this.setsFound += 1;
             this.selectedIds = [];
             this.resolution = {
@@ -98,13 +90,16 @@ export class Game {
               ids: r.ids,
               stagger: this.#deps.getAnimSettings().stagger,
               next: 'deal',
-            };
-          } else {
-            this.selectedIds = this.selectedIds.filter(x => !r.ids.includes(x));
-            this.toast = 'Not a set!';
-            this.resolution = null;
-          }
-        } else if (r.stage === 'removing') {
+            }
+        }, r.valid ? animSettings.validFlash : animSettings.invalidFlash);
+      } else if (r.stage === 'flash' && !r.valid) {
+        this.toast = 'Not a set!';
+        timeoutId = setTimeout(() => {
+          this.selectedIds = this.selectedIds.filter(x => !r.ids.includes(x));
+          this.resolution = null;
+        }, animSettings.invalidFlash);
+      } else if (r.stage === 'removing') {
+        timeoutId = setTimeout(() => {
           if (r.next === 'reshuffle') {
             this.#dealFreshBoard();
           } else {
@@ -112,13 +107,14 @@ export class Game {
             this.#topUp(MIN_BOARD);
             if (this.resolution === null) this.#checkBoard();
           }
-        } else {
+        }, this.#totalRemoveDuration(r.ids.length, r.stagger));
+      } else {
+        timeoutId = setTimeout(() => {
           this.resolution = null;
           this.#checkBoard();
-        }
-      }, d);
-
-      return () => clearTimeout(timerId);
+        }, this.#totalDealDuration(r.ids.length) + DEAL_SETTLE_MS);
+      }
+      return () => clearTimeout(timeoutId);
     });
 
     $effect(() => {
