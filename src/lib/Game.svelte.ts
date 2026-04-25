@@ -66,7 +66,6 @@ export class Game {
 
   timer = createTimer(() => !this.#deps.getRunning());
 
-  // --- Derived ---
   activeEntries = $derived(this.board.filter(e => e.card !== null));
   animating = $derived(this.resolution !== null);
 

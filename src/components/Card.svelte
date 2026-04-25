@@ -71,7 +71,6 @@
     transition-timing-function: ease, ease, ease, ease, ease;
     position: relative;
     overflow: hidden;
-    will-change: transform;
     container-type: size;
   }
 
@@ -118,12 +117,9 @@
   /* Rotate symbols sideways when the card is landscape */
   @container (aspect-ratio > 1) {
     .card-svg {
-      position: absolute;
       width: 100cqh;
       height: 100cqw;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(90deg);
+      transform: rotate(90deg);
     }
   }
 
