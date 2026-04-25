@@ -4,9 +4,10 @@
   import { getTheme, toggleTheme, type Theme } from '../lib/storage';
   import Modal from './Modal.svelte';
 
-  let { newGame, closeMenu, onModalClosed }: {
+  let { newGame, closeMenu, onModalOpened, onModalClosed }: {
     newGame: () => void;
     closeMenu: () => void;
+    onModalOpened: () => void;
     onModalClosed: () => void;
   } = $props();
 
@@ -24,7 +25,7 @@
   }
 </script>
 
-<Modal open={app.modalVisible && app.menuOpen} {onClose}>
+<Modal open={app.modalVisible && app.menuOpen} onOpen={onModalOpened} {onClose}>
   {#if view === 'main'}
     <h2 id="modal-title">Quick Sets</h2>
 

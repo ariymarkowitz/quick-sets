@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
 
-  let { open, onClose, children }: {
+  let { open, onOpen, onClose, children }: {
     open: boolean;
+    onOpen?: () => void;
     onClose?: () => void;
     children: Snippet;
   } = $props();
@@ -12,6 +13,7 @@
 
   $effect(() => {
     if (open) {
+      if (!visible) onOpen?.();
       closing = false;
       visible = true;
     } else if (visible && !closing) {

@@ -3,8 +3,9 @@
   import { formatTime } from '../lib/game';
   import Modal from './Modal.svelte';
 
-  let { newGame, onModalClosed }: {
+  let { newGame, onModalOpened, onModalClosed }: {
     newGame: () => void;
+    onModalOpened: () => void;
     onModalClosed: () => void;
   } = $props();
 
@@ -13,7 +14,7 @@
   }
 </script>
 
-<Modal open={app.modalVisible && !!app.gameOver} {onClose}>
+<Modal open={app.modalVisible && !!app.gameOver} onOpen={onModalOpened} {onClose}>
   <h2 id="modal-title">{app.gameOver?.title}</h2>
   <p id="final-time-display">{formatTime(app.gameOver?.time ?? 0)}</p>
   {#if app.gameOver?.disqualified}

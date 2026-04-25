@@ -15,7 +15,7 @@
 
   // Incrementing this will trigger a new game instance.
   let gameCounter = $state(0);
-  // True while the modal is visible or animating out. Cleared by onModalClosed.
+  // True while the modal is visible or animating out. Driven by Modal lifecycle callbacks.
   let modalAnimating = $state(false);
 
   $effect(() => {
@@ -53,6 +53,10 @@
     }
   }
 
+  function onModalOpened(): void {
+    modalAnimating = true;
+  }
+
   function onModalClosed(): void {
     modalAnimating = false;
   }
@@ -60,10 +64,6 @@
   function onCardsExited(): void {
     app.cardsExiting = false;
   }
-
-  $effect(() => {
-    if (app.modalVisible) modalAnimating = true;
-  });
 
   $effect(() => {
     if (app.pendingAction !== null && !app.cardsExiting && !modalAnimating) {
@@ -115,6 +115,6 @@
 <div id="game">
   <Header {openMenu} {closeMenu} />
   <CardGrid {onCardsExited} />
-  <GameOverModal {newGame} {onModalClosed} />
-  <MenuModal {newGame} {closeMenu} {onModalClosed} />
+  <GameOverModal {newGame} {onModalOpened} {onModalClosed} />
+  <MenuModal {newGame} {closeMenu} {onModalOpened} {onModalClosed} />
 </div>
