@@ -15,6 +15,8 @@
 
   // Incrementing this will trigger a new game instance.
   let gameCounter = $state(0);
+  // True while the modal is visible or animating out. Cleared by onModalClosed.
+  let modalAnimating = $state(false);
 
   $effect(() => {
     const counter = gameCounter;
@@ -52,20 +54,32 @@
   }
 
   function onModalClosed(): void {
-    const action = app.pendingAction;
-    app.pendingAction = null;
-    if (action === 'newGame') {
-      gameCounter++;
-      app.phase = { kind: 'playing' };
-    } else if (action === 'resumePlay') {
-      app.phase = { kind: 'playing' };
-      app.game?.triggerResumeDeal();
-    }
+    modalAnimating = false;
   }
 
   function onCardsExited(): void {
     app.cardsExiting = false;
   }
+
+  $effect(() => {
+    if (app.modalVisible) modalAnimating = true;
+  });
+
+  $effect(() => {
+    if (app.pendingAction !== null && !app.cardsExiting && !modalAnimating) {
+      untrack(() => {
+        const action = app.pendingAction;
+        app.pendingAction = null;
+        if (action === 'newGame') {
+          gameCounter++;
+          app.phase = { kind: 'playing' };
+        } else if (action === 'resumePlay') {
+          app.phase = { kind: 'playing' };
+          app.game?.triggerResumeDeal();
+        }
+      });
+    }
+  });
 
   $effect(() => setMode(app.mode));
 
