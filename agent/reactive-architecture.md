@@ -1,22 +1,49 @@
 ## Guidelines for reactive architecture
 
-When writing reactive Svelte code, the mental model to hold is that scopes are the persistent, identity-bearing part of a reactive system, and effects are transient function bodies attached to them.
+The mental model: **scopes are the persistent, identity-bearing part of a reactive system; effects are transient function bodies attached to them.** A scope (a component instance, an `$effect.root`, or a class/factory instance constructed in one) has identity and owns cleanup — disposing it cascades teardown through everything below. An effect's function body just runs, registers teardown, returns; the next run is a fresh execution. What persists between runs isn't the effect, it's the scope.
 
-A scope (a component instance, an `$effect.root`, or a class instance constructed within one of these) is close to pure state: a node in an ownership tree, a list of children, a list of cleanup callbacks. It has identity — you can point to it, it persists across effect re-runs, and disposing it cascades cleanup through everything it owns. Effects, by contrast, are not really "things" in the same way. Their function bodies run, set up some behavior, register teardown, and return. The next run is a fresh execution. What persists between runs isn't the effect's function but the scope it belongs to.
+So the productive question is usually "what scope owns this, and is that the right scope for its lifetime?" — not "what effects do I need?"
 
-This reframes a lot of decisions. The question "where should this reactive behavior live?" becomes "what scope owns it, and is that the right scope for its lifetime?" The question "how do I clean this up?" mostly answers itself once the scope is right — cleanup cascades from disposal. Grouping behaviors that share a fate under one scope isn't just tidier; it's what makes the ownership model do its job.
+### Reactive modules
 
-**Reactive modules.** Components are the familiar shape of a reactive scope, but the same pattern generalizes beyond the view layer. A class or factory function whose constructor calls `$effect`, accepts getters as props, and exposes state and methods is effectively a component without a template — a reactive module. When instantiated inside an ambient reactive scope, its effects are owned by that scope and cleaned up when it disposes. This is the natural shape for stores, controllers, view models, and resource managers: anything that bundles state, behavior, and reactive lifecycle but isn't UI.
+A class or factory whose constructor calls `$effect`, takes getter props, and exposes state and methods is a component without a template. When instantiated inside an ambient reactive scope, its effects are owned by that scope and torn down with it. This is the right shape for stores, controllers, view models, and resource managers.
 
-Props to such a module should be passed as getters (`() => signal`), not unwrapped values, so reactivity crosses the boundary instead of being snapshotted at construction. The instance's identity and the enclosing scope's identity become linked — the module lives as long as the scope does, and its internal machinery is torn down with it.
+Canonical examples in this project: `GameState` in [src/lib/state.svelte.ts](src/lib/state.svelte.ts), `createTimer` in [src/lib/timer.svelte.ts](src/lib/timer.svelte.ts).
 
-Reach for this pattern when state, methods, and effects genuinely belong together as a unit. If a class has no real state or methods and exists only to hold some effects, a plain function inside an effect is usually cleaner. The test: if the effects were removed, would the rest still want to be a class?
+**Pass props as getters, not unwrapped values**, so reactivity crosses the boundary instead of being snapshotted at construction:
 
-**Some further implications worth making concrete:**
+```ts
+// ❌ snapshotted — `paused` never updates inside the module
+createTimer(game.paused)
 
-- If an effect sets up a subscription, listener, timer, or external resource, it should return a cleanup. This is how teardown gets registered with the scope; without it, disposal has nothing to cascade.
-- `$derived` is the right tool for computing values from reactive state; `$effect` is for side effects on the world outside the reactive graph. An effect that exists to assign to a `$state` is almost always a derivation in disguise.
-- Reactive logic that needs to outlive a component belongs in an `$effect.root`, and whoever creates the root owns the disposer.
-- When designing a feature, "what is the scope here?" is usually a more productive starting question than "what effects do I need?"
+// ✅ reactive — the module re-reads on every access
+createTimer(() => game.paused)
+```
 
-The goal is code where scope boundaries and ownership are obvious, where reactive behavior is encapsulated into modules that attach cleanly to their enclosing scope, and where individual effects are small attachments rather than self-contained units trying to manage their own lifecycles.
+Reach for this pattern when state, methods, and effects genuinely belong together. If a class has no real state or methods and exists only to hold effects, a plain function inside an effect is usually cleaner. Test: if the effects were removed, would the rest still want to be a class?
+
+### Rules
+
+- **Effects that set up external resources must return a cleanup.** Subscriptions, listeners, timers, DOM handles — without a returned teardown, scope disposal has nothing to cascade.
+
+  ```ts
+  $effect(() => {
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  });
+  ```
+
+- **An effect that assigns to `$state` is almost always a `$derived` in disguise.** `$derived` is for computing values from reactive state; `$effect` is for side effects on the world outside the reactive graph.
+
+  ```ts
+  // ❌
+  let doubled = $state(0);
+  $effect(() => { doubled = count * 2; });
+
+  // ✅
+  let doubled = $derived(count * 2);
+  ```
+
+- **Reactive logic that needs to outlive a component belongs in an `$effect.root`**, and whoever creates the root owns the disposer.
+
+- **Group behaviors that share a fate under one scope.** Ownership only does its job when lifetime boundaries match.
