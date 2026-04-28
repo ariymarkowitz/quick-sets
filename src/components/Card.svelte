@@ -74,9 +74,11 @@
     container-type: size;
   }
 
-  .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 14px var(--shadow-hover);
+  @media(pointer:fine) {
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 14px var(--shadow-hover);
+    }
   }
 
   .card.selected {
