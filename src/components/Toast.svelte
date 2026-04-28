@@ -2,9 +2,13 @@
   import { app } from '../lib/AppState.svelte';
   
   const toast = $derived(app.game?.toast ?? '')
+  let displayed = $state('');
+  $effect(() => {
+    if (toast) displayed = toast;
+  });
 </script>
 
-<div id="message-toast" class:hidden={!toast}>{toast}</div>
+<div id="message-toast" class:hidden={!toast}>{displayed}</div>
 
 <style>
   #message-toast {
@@ -24,5 +28,7 @@
 
   #message-toast.hidden {
     opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s 0.3s;
   }
 </style>
