@@ -99,7 +99,7 @@ body.dark::after {
 #game {
   position: relative;
   z-index: 1;
-  max-width: 700px;
+  max-width: 1000px;
   margin: 0 auto;
   height: 100vh;
   height: 100dvh;
