@@ -14,10 +14,11 @@ The game ends when there are no sets among the remaining cards (deck + board com
 
 - Light/dark theme toggle
 - Different UI speeds for casual play and speedrunning
-- Hints (if you really want to cheat)
+- Hints for when you are stuck or a cheater
 - Auto-reshuffle when no sets exist on the board
 - Top 5 leaderboard saved locally
 - Works well on mobile browsers
+- The cards orient vertically in portrait mode, and horizontally in landscape mode
 - Can be installed as a Progressive Web App
 
 Made with the help of Claude.
