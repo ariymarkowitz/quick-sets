@@ -5,27 +5,14 @@ const THEME_KEY = 'set-game-theme';
 const SCORES_KEY = 'set-game-scores';
 const MODE_KEY = 'set-game-mode';
 
-export function initTheme(): Theme {
+export function getStoredTheme(): Theme {
   const stored = localStorage.getItem(THEME_KEY);
-  const theme: Theme = stored === 'light' || stored === 'dark' ? stored : 'light';
-  document.body.className = theme;
-  return theme;
-}
-
-export function getTheme(): Theme {
-  return document.body.className === 'dark' ? 'dark' : 'light';
+  return stored === 'light' || stored === 'dark' ? stored : 'light';
 }
 
 export function setTheme(theme: Theme): void {
   localStorage.setItem(THEME_KEY, theme);
   document.body.className = theme;
-}
-
-export function toggleTheme(): Theme {
-  const current = getTheme();
-  const next: Theme = current === 'dark' ? 'light' : 'dark';
-  setTheme(next);
-  return next;
 }
 
 export function getMode(): GameMode {

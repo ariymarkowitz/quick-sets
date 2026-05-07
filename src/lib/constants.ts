@@ -37,7 +37,7 @@ export const MODE_TIMINGS = {
     validFlash: 360, invalidFlash: 340, shakeDuration: 260,
   },
 } as const;
-export const INITIAL_BOARD = 12;
+export const BOARD_SIZE = 12;
 export const MIN_BOARD = 3;
 
 export const VICTORY_MESSAGES = [

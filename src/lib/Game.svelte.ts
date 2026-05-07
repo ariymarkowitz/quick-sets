@@ -1,6 +1,6 @@
 import { untrack } from 'svelte';
 import { generateDeck, shuffle, isValidSet, hasSet, findSet, type Card } from './game-utils.js';
-import { INITIAL_BOARD as BOARD_SIZE, MIN_BOARD, DEAL_SETTLE_MS, TOAST_MS, MODE_TIMINGS } from './constants.js';
+import { BOARD_SIZE, MIN_BOARD, DEAL_SETTLE_MS, TOAST_MS, MODE_TIMINGS } from './constants.js';
 import { createTimer } from './timer.svelte.js';
 
 export type EntryTransition =
@@ -79,27 +79,19 @@ export class Game {
       if (!r) return;
 
       const animSettings = this.#deps.getAnimSettings();
-      let timeoutId: number;
+      if (r.stage === 'flash' && !r.valid) this.toast = 'Not a set!';
 
-      if (r.stage === 'flash' && r.valid) {
-        timeoutId = setTimeout(() => {
+      const id = setTimeout(() => {
+        if (r.stage === 'flash') {
+          if (r.valid) {
             this.setsFound += 1;
             this.selectedIds = [];
-            this.resolution = {
-              stage: 'removing',
-              ids: r.ids,
-              stagger: this.#deps.getAnimSettings().stagger,
-              next: 'deal',
-            }
-        }, r.valid ? animSettings.validFlash : animSettings.invalidFlash);
-      } else if (r.stage === 'flash' && !r.valid) {
-        this.toast = 'Not a set!';
-        timeoutId = setTimeout(() => {
-          this.selectedIds = this.selectedIds.filter(x => !r.ids.includes(x));
-          this.resolution = null;
-        }, animSettings.invalidFlash);
-      } else if (r.stage === 'removing') {
-        timeoutId = setTimeout(() => {
+            this.resolution = { stage: 'removing', ids: r.ids, stagger: animSettings.stagger, next: 'deal' };
+          } else {
+            this.selectedIds = this.selectedIds.filter(x => !r.ids.includes(x));
+            this.resolution = null;
+          }
+        } else if (r.stage === 'removing') {
           if (r.next === 'reshuffle') {
             this.#dealFreshBoard();
           } else {
@@ -107,14 +99,13 @@ export class Game {
             this.#topUp(MIN_BOARD);
             if (this.resolution === null) this.#checkBoard();
           }
-        }, this.#totalRemoveDuration(r.ids.length, r.stagger));
-      } else {
-        timeoutId = setTimeout(() => {
+        } else {
           this.resolution = null;
           this.#checkBoard();
-        }, this.#totalDealDuration(r.ids.length) + DEAL_SETTLE_MS);
-      }
-      return () => clearTimeout(timeoutId);
+        }
+      }, this.#stageDuration(r, animSettings));
+
+      return () => clearTimeout(id);
     });
 
     $effect(() => {
@@ -220,13 +211,12 @@ export class Game {
 
   // --- Private helpers ---
 
-  #totalRemoveDuration(n: number, stagger: number): number {
-    return Math.max(0, n - 1) * stagger + this.#deps.getAnimSettings().removeDuration;
-  }
-
-  #totalDealDuration(n: number): number {
-    const animSettings = this.#deps.getAnimSettings();
-    return Math.max(0, n - 1) * animSettings.stagger + animSettings.dealDuration;
+  #stageDuration(r: NonNullable<Resolution>, a: AnimSettings): number {
+    switch (r.stage) {
+      case 'flash':    return r.valid ? a.validFlash : a.invalidFlash;
+      case 'removing': return Math.max(0, r.ids.length - 1) * r.stagger + a.removeDuration;
+      case 'dealing':  return Math.max(0, r.ids.length - 1) * a.stagger + a.dealDuration + DEAL_SETTLE_MS;
+    }
   }
 
   #ensureBoardHasSet(cards: Card[], boardSize: number): void {
@@ -291,8 +281,7 @@ export class Game {
       this.board.push(e);
       ids.push(e.id);
     }
-    if (ids.length > 0) this.resolution = { stage: 'dealing', ids };
-    else this.resolution = null;
+    this.resolution = ids.length > 0 ? { stage: 'dealing', ids } : null;
   }
 
   #dealFreshBoard(): void {

@@ -7,11 +7,12 @@
   import SvgDefs from './components/SvgDefs.svelte';
   import { app } from './lib/AppState.svelte';
   import { Game } from './lib/Game.svelte';
-  import { getScores, getMode, setMode, saveScore as persistScore } from './lib/storage';
+  import { getScores, getMode, setMode, getStoredTheme, setTheme, saveScore as persistScore } from './lib/storage';
   import { VICTORY_MESSAGES } from './lib/constants';
 
   app.scores = getScores();
   app.mode = getMode();
+  app.theme = getStoredTheme();
 
   let gameCounter = $state(0);
   let modalAnimating = $state(false);
@@ -79,6 +80,7 @@
   });
 
   $effect(() => setMode(app.mode));
+  $effect(() => setTheme(app.theme));
 
   $effect(() => {
     const onChange = () => {

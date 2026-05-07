@@ -36,7 +36,7 @@
   {onkeydown}
 >
   <svg viewBox="0 0 {CARD_W} {CARD_H}" class="card-svg" preserveAspectRatio="xMidYMid meet">
-    {#each [...Array(card.number).keys()] as i}
+    {#each Array.from({ length: card.number }) as _, i}
       {@const shapeH = SHAPE_DATA[card.shape].h * SHAPE_SCALE}
       {@const startY = (CARD_H - (card.number - 1) * SHAPE_SLOT_H) / 2}
       {@const ty = startY + i * SHAPE_SLOT_H - shapeH / 2}
@@ -68,7 +68,6 @@
     box-shadow: 0 2px 8px var(--shadow);
     transition-property: opacity, transform, box-shadow, border-color, background-color;
     transition-duration: 0.12s, 0.12s, 0.15s, 0.2s, 0.3s;
-    transition-timing-function: ease, ease, ease, ease, ease;
     position: relative;
     overflow: hidden;
     container-type: size;

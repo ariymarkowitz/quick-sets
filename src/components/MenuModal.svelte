@@ -1,7 +1,6 @@
 <script lang="ts">
   import { app } from '../lib/AppState.svelte';
   import { formatTime } from '../lib/game-utils';
-  import { getTheme, toggleTheme, type Theme } from '../lib/storage';
   import Modal from './Modal.svelte';
 
   let { newGame, closeMenu, onModalOpened, onModalClosed }: {
@@ -13,10 +12,9 @@
 
   type View = 'main' | 'help' | 'leaderboard';
   let view: View = $state('main');
-  let theme: Theme = $state(getTheme());
 
   function onThemeToggle() {
-    theme = toggleTheme();
+    app.theme = app.theme === 'dark' ? 'light' : 'dark';
   }
 
   function onClose() {
@@ -48,7 +46,7 @@
         id="menu-theme-toggle"
         class="menu-btn icon-btn"
         aria-label="Toggle theme"
-        title={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
+        title={app.theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
         onclick={onThemeToggle}
       ></button>
     </div>

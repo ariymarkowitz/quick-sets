@@ -1,4 +1,5 @@
 import { MODE_TIMINGS } from './constants.js';
+import type { Theme } from './storage.js';
 import type { Game } from './Game.svelte.js';
 import type { GameMode, GameOverInfo, AnimSettings } from './Game.svelte.js';
 
@@ -16,6 +17,7 @@ export type PendingAction = 'newGame' | 'resumePlay';
 class AppState {
   phase: Phase = $state({ kind: 'intro' });
   mode: GameMode = $state('chill');
+  theme: Theme = $state('light');
   scores: number[] = $state([]);
   pendingAction: PendingAction | null = $state(null);
   cardsExiting: boolean = $state(false);

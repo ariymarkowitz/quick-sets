@@ -1,9 +1,9 @@
 import { mount } from 'svelte';
 import './app.css';
 import App from './App.svelte';
-import { initTheme } from './lib/storage.js';
+import { getStoredTheme } from './lib/storage.js';
 
-initTheme();
+document.body.className = getStoredTheme();
 
 const target = document.getElementById('app');
 if (!target) throw new Error('#app element not found');
