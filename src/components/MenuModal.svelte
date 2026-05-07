@@ -93,7 +93,7 @@
 <style>
 
   #modal-title {
-    margin-bottom: 20px;
+    margin-bottom: var(--menu-title-mb);
   }
 
   .segmented {
@@ -210,11 +210,5 @@
     color: var(--text-muted);
     font-size: 0.9rem;
     margin-bottom: 20px;
-  }
-
-  @media (max-height: 500px) {
-    #modal-title {
-      margin-bottom: 12px;
-    }
   }
 </style>

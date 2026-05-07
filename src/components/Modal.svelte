@@ -60,22 +60,19 @@
   #modal {
     background: var(--surface);
     border-radius: 20px;
-    padding: 30px 28px;
+    padding: var(--modal-padding);
     max-width: 360px;
     width: 100%;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
     text-align: center;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border);
     transition: background-color 0.3s ease, border 0.3s ease;
     animation: modalIn 500ms cubic-bezier(0.33, 1, 0.68, 1) both;
-  }
-
-  @media (max-height: 500px) {
-    #modal {
-      max-height: calc(100dvh - 24px);
-      overflow-y: auto;
-      padding: 20px 26px;
-    }
+    
+    display: flex;
+    flex-direction: column;
   }
 
   #modal.closing {

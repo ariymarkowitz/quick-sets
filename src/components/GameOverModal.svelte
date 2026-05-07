@@ -29,35 +29,20 @@
 
 <style>
   #modal-title {
-    margin-bottom: 12px;
+    margin-bottom: var(--gameover-title-mb);
   }
 
   #final-time-display {
-    font-size: 2.8rem;
+    font-size: var(--time-fs);
     font-weight: 800;
     color: var(--text);
     font-variant-numeric: tabular-nums;
-    margin-bottom: 20px;
+    margin-bottom: var(--time-mb);
   }
 
   .disqualified-note {
     font-size: 0.85rem;
     color: var(--text-muted);
-    margin-bottom: 12px;
-  }
-
-  @media (max-height: 500px) {
-    #modal-title {
-      margin-bottom: 6px;
-    }
-
-    #final-time-display {
-      font-size: 1.8rem;
-      margin-bottom: 10px;
-    }
-
-    .disqualified-note {
-      margin-bottom: 6px;
-    }
+    margin-bottom: var(--note-mb);
   }
 </style>
