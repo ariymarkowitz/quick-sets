@@ -1,3 +1,13 @@
+/* ─── Fonts ─────────────────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: block;
+  src: url('/fonts/nunito-variable.woff2') format('woff2');
+}
+
 /* ─── CSS Variables ─────────────────────────────────────────────────────────── */
 
 :root {
