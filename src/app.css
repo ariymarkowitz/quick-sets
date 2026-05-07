@@ -22,24 +22,16 @@
 
   --modal-padding: 30px 28px;
   --modal-title-fs: 1.75rem;
-  --gameover-title-mb: 12px;
-  --menu-title-mb: 20px;
+  --modal-gap: 18px;
   --time-fs: 2.8rem;
-  --time-mb: 20px;
-  --note-mb: 12px;
-  --leaderboard-mb: 22px;
 }
 
 @media (max-height: 500px) {
   :root {
     --modal-padding: 20px 26px;
     --modal-title-fs: 1.4rem;
-    --gameover-title-mb: 6px;
-    --menu-title-mb: 12px;
+    --modal-gap: 10px;
     --time-fs: 1.8rem;
-    --time-mb: 10px;
-    --note-mb: 6px;
-    --leaderboard-mb: 14px;
   }
 }
 
@@ -161,6 +153,7 @@ button:active {
   font-size: var(--modal-title-fs);
   font-weight: 700;
   color: var(--accent);
+  margin-bottom: 3px;
 }
 
 #play-again-btn {
@@ -188,7 +181,7 @@ button:active {
 #leaderboard-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 var(--leaderboard-mb);
+  margin: 0;
   min-height: 64px;
   overflow-y: auto;
   display: flex;

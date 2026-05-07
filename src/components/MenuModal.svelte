@@ -92,10 +92,6 @@
 
 <style>
 
-  #modal-title {
-    margin-bottom: var(--menu-title-mb);
-  }
-
   .segmented {
     display: flex;
     width: 100%;
@@ -152,8 +148,6 @@
   .menu-row {
     display: flex;
     gap: 8px;
-    margin-top: 18px;
-    margin-bottom: 18px;
   }
 
   .menu-btn {
@@ -188,13 +182,12 @@
   }
 
   .resume-btn {
-    margin-top: 10px;
+    margin-top: calc(var(--modal-gap) * -0.5);
     width: 100%;
   }
 
   .help-text {
     text-align: left;
-    margin-bottom: 20px;
     font-size: 0.92rem;
     line-height: 1.45;
     color: var(--text);
@@ -209,6 +202,5 @@
   .empty-scores {
     color: var(--text-muted);
     font-size: 0.9rem;
-    margin-bottom: 20px;
   }
 </style>

@@ -28,21 +28,18 @@
 </Modal>
 
 <style>
-  #modal-title {
-    margin-bottom: var(--gameover-title-mb);
-  }
 
   #final-time-display {
     font-size: var(--time-fs);
     font-weight: 800;
     color: var(--text);
     font-variant-numeric: tabular-nums;
-    margin-bottom: var(--time-mb);
+
+    margin-top: -6px;
   }
 
   .disqualified-note {
     font-size: 0.85rem;
     color: var(--text-muted);
-    margin-bottom: var(--note-mb);
   }
 </style>

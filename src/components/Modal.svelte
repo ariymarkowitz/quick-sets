@@ -70,9 +70,10 @@
     border: 1px solid var(--border);
     transition: background-color 0.3s ease, border 0.3s ease;
     animation: modalIn 500ms cubic-bezier(0.33, 1, 0.68, 1) both;
-    
+
     display: flex;
     flex-direction: column;
+    gap: var(--modal-gap);
   }
 
   #modal.closing {
@@ -85,7 +86,6 @@
     text-transform: uppercase;
     letter-spacing: 1.5px;
     color: var(--text-muted);
-    margin-bottom: 10px;
   }
 
   @keyframes modalIn {
