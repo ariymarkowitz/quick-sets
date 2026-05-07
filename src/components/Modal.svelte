@@ -59,16 +59,16 @@
 
   #modal {
     background: var(--surface);
-    border-radius: 20px;
+    border-radius: var(--radius-lg);
     padding: var(--modal-padding);
     max-width: 360px;
     width: 100%;
     max-height: calc(100dvh - 24px);
     overflow-y: auto;
     text-align: center;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 24px 64px var(--shadow-strong);
     border: 1px solid var(--border);
-    transition: background-color 0.3s ease, border 0.3s ease;
+    transition: background-color var(--dur-slow) ease, border var(--dur-slow) ease;
     animation: modalIn 500ms cubic-bezier(0.33, 1, 0.68, 1) both;
 
     display: flex;
@@ -81,7 +81,7 @@
   }
 
   :global(#modal h3) {
-    font-size: 0.78rem;
+    font-size: var(--fs-xs);
     font-weight: 650;
     text-transform: uppercase;
     letter-spacing: 1.5px;

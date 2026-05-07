@@ -54,7 +54,7 @@
     align-items: center;
     gap: 1rem;
     flex-shrink: 0;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--dur-quick) ease;
   }
 
   .header-group.hidden {
@@ -78,7 +78,7 @@
     width: 1rem;
     height: 1rem;
     background-color: var(--text);
-    transition: background-color 0.15s ease;
+    transition: background-color var(--dur-quick) ease;
   }
 
   #timer {
@@ -86,14 +86,14 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: var(--text);
-    transition: color 0.15s ease;
+    transition: color var(--dur-quick) ease;
     min-width: 3ch;
   }
 
   #deck-count {
     font-size: 1rem;
     color: var(--text-muted);
-    transition: color 0.15s ease;
+    transition: color var(--dur-quick) ease;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
@@ -105,7 +105,7 @@
     width: 1.5em;
     height: 1.5em;
     background-color: currentColor;
-    transition: background-color 0.15s ease;
+    transition: background-color var(--dur-quick) ease;
     -webkit-mask: url('../icons/mdi--cards.svg') no-repeat center / contain;
     mask: url('../icons/mdi--cards.svg') no-repeat center / contain;
   }

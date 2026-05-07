@@ -20,15 +20,15 @@
     text-align: center;
     padding: 7px 16px;
     min-height: 34px;
-    font-size: 0.88rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--text-muted);
-    transition: opacity 0.3s ease;
+    transition: opacity var(--dur-slow) ease;
   }
 
   #message-toast.hidden {
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0s 0.3s;
+    transition: opacity var(--dur-slow) ease, visibility 0s var(--dur-slow);
   }
 </style>

@@ -29,11 +29,25 @@
   --hint-glow: rgba(255, 195, 53, 0.35);
   --card-bg: #ffffff;
   --card-border: #e0e0e0;
+  --card-radius: 16px;
 
   --modal-padding: 30px 28px;
   --modal-title-fs: 1.75rem;
   --modal-gap: 18px;
   --time-fs: 2.8rem;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  --fs-xs: 0.8rem;
+  --fs-sm: 0.9rem;
+  --fs-md: 1rem;
+
+  --dur-quick: 0.15s;
+  --dur-slow: 0.3s;
+
+  --shadow-strong: rgba(0, 0, 0, 0.3);
 }
 
 @media (max-height: 500px) {
@@ -56,6 +70,7 @@ body.dark {
   --shadow-hover: rgba(0,0,0,0.5);
   --card-bg: #1e2040;
   --card-border: #2a2d52;
+  --shadow-strong: rgba(0, 0, 0, 0.6);
 }
 
 /* ─── Reset & Base ──────────────────────────────────────────────────────────── */
@@ -86,7 +101,7 @@ body {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color var(--dur-slow) ease, color var(--dur-slow) ease;
 }
 
 body::before,
@@ -141,14 +156,14 @@ body.dark::after {
 button {
   background: var(--surface-alt);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 5px 11px;
-  font-size: 0.82rem;
+  font-size: var(--fs-xs);
   cursor: pointer;
   color: var(--text);
   font-family: inherit;
   font-weight: 500;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  transition: background-color var(--dur-quick) ease, color var(--dur-quick) ease, border-color var(--dur-quick) ease, opacity var(--dur-quick) ease;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -169,14 +184,14 @@ button:active {
 #play-again-btn {
   width: 100%;
   padding: 12px;
-  font-size: 1rem;
+  font-size: var(--fs-md);
   font-weight: 700;
   background: var(--accent);
   color: #ffffff;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
+  transition: opacity var(--dur-quick) ease, transform 0.1s ease;
 }
 
 #play-again-btn:hover {
@@ -205,11 +220,11 @@ button:active {
   justify-content: space-between;
   padding: 7px 12px;
   background: var(--surface-alt);
-  border-radius: 8px;
-  font-size: 0.92rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
   color: var(--text);
   font-variant-numeric: tabular-nums;
-  transition: background-color 0.3s ease;
+  transition: background-color var(--dur-slow) ease;
 }
 
 #leaderboard-list li.current-score {

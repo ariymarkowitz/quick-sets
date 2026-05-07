@@ -56,7 +56,7 @@
   .card {
     background: var(--card-bg);
     border: 2.5px solid var(--card-border);
-    border-radius: 14px;
+    border-radius: var(--card-radius);
     cursor: pointer;
     touch-action: none;
     display: flex;
@@ -88,7 +88,7 @@
 
   .card.valid {
     border-color: var(--valid) !important;
-    box-shadow: 0 0 0 3px var(--valid-glow), 0 5px 16px var(--shadow-hover) !important;
+    box-shadow: 0 0 0 3px var(--valid-glow), 0 5px 14px var(--shadow-hover) !important;
     transform: translateY(-4px);
   }
 

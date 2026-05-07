@@ -96,9 +96,9 @@
     display: flex;
     width: 100%;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     overflow: hidden;
-    transition: border 0.3s ease;
+    transition: border var(--dur-slow) ease;
   }
 
   .segmented-btn {
@@ -107,7 +107,7 @@
     border: none;
     border-radius: 0;
     padding: 9px 0;
-    font-size: 0.92rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--text-muted);
     display: flex;
@@ -153,7 +153,7 @@
   .menu-btn {
     flex: 1;
     padding: 10px;
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
   }
 
@@ -188,7 +188,7 @@
 
   .help-text {
     text-align: left;
-    font-size: 0.92rem;
+    font-size: var(--fs-sm);
     line-height: 1.45;
     color: var(--text);
   }
@@ -201,6 +201,6 @@
 
   .empty-scores {
     color: var(--text-muted);
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
   }
 </style>
