@@ -191,6 +191,20 @@ button:active {
   font-weight: 700;
 }
 
+@media (max-height: 500px) {
+  #modal-title {
+    font-size: 1.4rem;
+    margin-bottom: 12px;
+  }
+
+  #leaderboard-list {
+    max-height: calc(100dvh - 280px);
+    min-height: 64px;
+    overflow-y: auto;
+    margin-bottom: 14px;
+  }
+}
+
 /* ─── Shape Fill & Stroke ────────────────────────────────────────────────────
    Applied to <use> elements; properties inherit into the <symbol> shadow tree.
    stroke-width values are in the symbol's native coordinate space (0–120),

@@ -45,4 +45,19 @@
     color: var(--text-muted);
     margin-bottom: 12px;
   }
+
+  @media (max-height: 500px) {
+    #modal-title {
+      margin-bottom: 6px;
+    }
+
+    #final-time-display {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+
+    .disqualified-note {
+      margin-bottom: 6px;
+    }
+  }
 </style>

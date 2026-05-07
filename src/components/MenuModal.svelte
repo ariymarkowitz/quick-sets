@@ -211,4 +211,10 @@
     font-size: 0.9rem;
     margin-bottom: 20px;
   }
+
+  @media (max-height: 500px) {
+    #modal-title {
+      margin-bottom: 12px;
+    }
+  }
 </style>

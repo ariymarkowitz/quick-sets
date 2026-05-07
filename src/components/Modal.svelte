@@ -70,6 +70,14 @@
     animation: modalIn 500ms cubic-bezier(0.33, 1, 0.68, 1) both;
   }
 
+  @media (max-height: 500px) {
+    #modal {
+      max-height: calc(100dvh - 24px);
+      overflow-y: auto;
+      padding: 20px 26px;
+    }
+  }
+
   #modal.closing {
     animation: modalOut 200ms forwards;
   }
