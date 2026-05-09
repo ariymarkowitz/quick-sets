@@ -35,7 +35,7 @@
     color: var(--text);
     font-variant-numeric: tabular-nums;
 
-    margin-top: -6px;
+    margin-top: var(--time-margin-top);
   }
 
   .disqualified-note {
